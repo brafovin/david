@@ -115,7 +115,10 @@ body{background:#050510;overflow:hidden;font-family:'Segoe UI',sans-serif;color:
   <div id="topbar">
     <h1>⛩️ Yokai Waffen Quest 3D</h1>
     <span class="gold" id="gold">💰 0 Gold</span>
-    <button class="btn" style="background:linear-gradient(135deg,#e65100,#ffa726);color:#fff;padding:6px 13px;pointer-events:all" onclick="openShop()">🏪 Händler</button>
+    <div style="display:flex;gap:8px">
+      <button id="musicBtn" class="btn" style="background:linear-gradient(135deg,#1a3a1a,#2e7d32);color:#aaffaa;padding:6px 13px;pointer-events:all" onclick="toggleMusic()">🎵 Musik: AUS</button>
+      <button class="btn" style="background:linear-gradient(135deg,#e65100,#ffa726);color:#fff;padding:6px 13px;pointer-events:all" onclick="openShop()">🏪 Händler</button>
+    </div>
   </div>
 
   <div id="left">
@@ -197,7 +200,7 @@ renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050510);
-scene.fog = new THREE.FogExp2(0x050510, 0.028);
+scene.fog = new THREE.FogExp2(0x050510, 0.014);
 
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
 const CAM_BASE = new THREE.Vector3(0, 9, 18);
@@ -224,13 +227,17 @@ sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
 sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
 scene.add(sun);
 
-const rLight = new THREE.PointLight(0xff2244, 6, 22);
+const rLight = new THREE.PointLight(0xff2244, 10, 30);
 rLight.position.set(5, 4, 3);
 scene.add(rLight);
 
-const bLight = new THREE.PointLight(0x2244ff, 6, 22);
+const bLight = new THREE.PointLight(0x2244ff, 10, 30);
 bLight.position.set(-5, 4, 3);
 scene.add(bLight);
+
+// Per-location ambient color light
+const locAmbient = new THREE.AmbientLight(0x001a00, 3);
+scene.add(locAmbient);
 
 // ── ENVIRONMENT ───────────────────────────────────────────
 // Ground
@@ -563,11 +570,12 @@ function shake(a=0.3, d=0.22) { shakeT=d; shakeA=a; }
 
 // ── LOCATION COLORS ───────────────────────────────────────
 const LOC_COL={
-  forest:   {bg:0x051405,fog:0x051405,r:0x22ff22,b:0x226622},
-  shrine:   {bg:0x0a0515,fog:0x0a0515,r:0xaa22ff,b:0x2222ff},
-  mountain: {bg:0x050a10,fog:0x050a10,r:0x2244ff,b:0x4488ff},
-  city:     {bg:0x150505,fog:0x150505,r:0xff2222,b:0xff8822},
-  void:     {bg:0x080510,fog:0x080510,r:0xff00ff,b:0x6600ff},
+  // bg=sky, fog=mist color, r=right point light, b=left point light, amb=ambient tint, ring=arena ring
+  forest:   {bg:0x0a2210,fog:0x0a1a0a,r:0x33ff55,b:0x228833,amb:0x002a00, ring:[0.0,0.8,0.1]},
+  shrine:   {bg:0x1a0d2e,fog:0x150a28,r:0xcc44ff,b:0x5522ff,amb:0x160030, ring:[0.5,0.0,1.0]},
+  mountain: {bg:0x081828,fog:0x061020,r:0x44ddff,b:0x6688ff,amb:0x001030, ring:[0.0,0.5,1.0]},
+  city:     {bg:0x2a0a04,fog:0x1e0804,r:0xff4422,b:0xff9900,amb:0x2a0800, ring:[1.0,0.3,0.0]},
+  void:     {bg:0x100430,fog:0x0c0325,r:0xff00ee,b:0x8800ff,amb:0x180028, ring:[0.8,0.0,1.0]},
 };
 
 // ── GAME DATA ─────────────────────────────────────────────
@@ -681,6 +689,8 @@ function setBtns(battle) {
 }
 
 // ── LOCATION ──────────────────────────────────────────────
+let locRingColor=[0.1,0.1,1.0];
+
 function setLoc(btn, loc) {
   if (G.battle){log('Nicht während des Kampfes!','li');return;}
   G.loc=loc;
@@ -690,8 +700,12 @@ function setLoc(btn, loc) {
   scene.background.set(c.bg);
   scene.fog.color.set(c.fog);
   rLight.color.set(c.r);
+  rLight.intensity=12;
   bLight.color.set(c.b);
-  log(`📍 Du reist zu: <b>${btn.textContent.trim()}</b>`,'li');
+  bLight.intensity=12;
+  locAmbient.color.set(c.amb);
+  locRingColor=c.ring;
+  log(`📍 Du reist nach: <b>${btn.textContent.trim()}</b>`,'li');
 }
 
 // ── COMBAT ────────────────────────────────────────────────
@@ -877,13 +891,13 @@ renderer.setAnimationLoop(()=>{
   if(pMesh){pMesh.position.y=Math.sin(t*1.2)*0.05;pMesh.rotation.y=Math.PI*.18+Math.sin(t*.5)*.05;}
   if(eMesh){eMesh.position.y=Math.sin(t*1.5+1)*0.08;eMesh.rotation.y=-Math.PI*.18+Math.sin(t*.7+.5)*.07;}
 
-  // Arena ring pulse
+  // Arena ring pulse (location-colored)
   const p=0.5+Math.sin(t*2)*0.5;
-  ring.material.color.setRGB(p*.1,p*.1,p);
+  ring.material.color.setRGB(locRingColor[0]*p, locRingColor[1]*p, locRingColor[2]*p);
 
   // Light pulse
-  rLight.intensity=5+Math.sin(t*2.3)*1.5;
-  bLight.intensity=5+Math.sin(t*1.8+1)*1.5;
+  rLight.intensity=10+Math.sin(t*2.3)*3;
+  bLight.intensity=10+Math.sin(t*1.8+1)*3;
 
   // Camera shake
   if(shakeT>0){
@@ -898,13 +912,111 @@ renderer.setAnimationLoop(()=>{
   renderer.render(scene,camera);
 });
 
+// ── JAPANESE MUSIC (Web Audio API, Hirajoshi scale) ───────
+const Music = (() => {
+  // Hirajoshi pentatonic scale frequencies (distinctly Japanese)
+  const A2=110.00, E3=164.81, F3=174.61,
+        A3=220.00, B3=246.94, C4=261.63, E4=329.63, F4=349.23,
+        A4=440.00, B4=493.88, C5=523.25, E5=659.25;
+
+  // Melody pattern: [freq(0=rest), duration_in_beats]
+  const MEL=[
+    [A4,1],[C5,.5],[B4,.5],[A4,2],
+    [E4,1],[F4,1],[A4,2],
+    [C5,1],[E5,.5],[C5,.5],[B4,2],
+    [A4,1],[F4,.5],[E4,.5],[A3,2],
+    [E4,1],[F4,1],[A4,1],[B4,1],[A4,2],
+    [C5,1],[B4,.5],[A4,.5],[F4,1],[E4,1],[C4,2],
+    [A3,2],[E4,1],[F4,1],[A4,4],
+    [0,2],
+  ];
+
+  // Bass drone
+  const BASS=[
+    [A2,3],[E3,1],[A2,2],[F3,2],
+    [A2,4],[E3,2],[A2,2],
+    [A2,3],[E3,1],[F3,1],[A2,1],[E3,2],[A2,2],
+  ];
+
+  let ctx=null,mGain=null,dly=null;
+  let on=false,mI=0,bI=0,mT=0,bT=0,tmr=null;
+  const BPM=66, B=60/BPM;
+
+  function setup() {
+    ctx=new(window.AudioContext||window.webkitAudioContext)();
+    mGain=ctx.createGain(); mGain.gain.value=0; mGain.connect(ctx.destination);
+    dly=ctx.createDelay(3); dly.delayTime.value=0.55;
+    const fb=ctx.createGain(); fb.gain.value=0.2;
+    const dg=ctx.createGain(); dg.gain.value=0.18;
+    dly.connect(fb); fb.connect(dly); dly.connect(dg); dg.connect(mGain);
+  }
+
+  function note(f,t,dur,v,type='sine') {
+    if(!f||!ctx) return;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(v,t+0.06);
+    g.gain.setValueAtTime(v*0.5,t+dur*B*0.45);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur*B*0.92);
+    o.connect(g); g.connect(mGain); g.connect(dly);
+    o.start(t); o.stop(t+dur*B+0.08);
+  }
+
+  function tick() {
+    if(!on) return;
+    const now=ctx.currentTime, look=0.5;
+    while(mT<now+look){
+      const n=MEL[mI%MEL.length];
+      note(n[0],mT,n[1],.26); mT+=n[1]*B; mI++;
+    }
+    while(bT<now+look){
+      const n=BASS[bI%BASS.length];
+      note(n[0],bT,n[1],.13,'triangle'); bT+=n[1]*B; bI++;
+    }
+    tmr=setTimeout(tick,130);
+  }
+
+  return {
+    toggle() {
+      if(!ctx) setup();
+      if(on) {
+        on=false; clearTimeout(tmr);
+        mGain.gain.linearRampToValueAtTime(0,ctx.currentTime+0.6);
+        return false;
+      } else {
+        on=true;
+        mT=ctx.currentTime+0.15; bT=ctx.currentTime+0.15;
+        mGain.gain.linearRampToValueAtTime(0.32,ctx.currentTime+0.8);
+        tick(); return true;
+      }
+    }
+  };
+})();
+
+function toggleMusic() {
+  const isOn=Music.toggle();
+  const btn=document.getElementById('musicBtn');
+  btn.textContent=isOn?'🎵 Musik: AN':'🔇 Musik: AUS';
+  btn.style.background=isOn?'linear-gradient(135deg,#1a4a1a,#4caf50)':'linear-gradient(135deg,#1a3a1a,#2e7d32)';
+  btn.style.color=isOn?'#ccffcc':'#aaffaa';
+}
+
 // ── INIT ──────────────────────────────────────────────────
 initG();
 spawnPlayer();
 applyWeapon3D('fists');
 renderUI();
+// Apply initial location (forest) colors
+const _initLoc=LOC_COL.forest;
+scene.background.set(_initLoc.bg);
+scene.fog.color.set(_initLoc.fog);
+rLight.color.set(_initLoc.r); rLight.intensity=12;
+bLight.color.set(_initLoc.b); bLight.intensity=12;
+locAmbient.color.set(_initLoc.amb);
+locRingColor=_initLoc.ring;
 log('Erkunde Orte, besiege Yokais und sammle mächtige Waffen! 🗡️','li');
-log('Waffen fallen als Beute oder kaufe sie beim Händler oben rechts.','li');
+log('Klicke 🎵 Musik: AUS für japanische Hintergrundmusik!','li');
 </script>
 </body>
 </html>
