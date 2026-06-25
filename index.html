@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yokai Waffel Quest</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap');
+
+    :root {
+      --bg: #0d0d1a;
+      --panel: #1a1a2e;
+      --accent: #e94560;
+      --gold: #f0c040;
+      --text: #e0e0f0;
+      --muted: #888;
+      --green: #4caf50;
+      --blue: #4fc3f7;
+      --red: #ef5350;
+      --purple: #9c27b0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+      text-align: center;
+      padding: 20px 0 5px;
+      text-shadow: 0 0 20px rgba(240,192,64,0.5);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+
+    #game {
+      display: grid;
+      grid-template-columns: 220px 1fr 220px;
+      gap: 12px;
+      width: 100%;
+      max-width: 900px;
+      padding: 0 12px 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .panel h3 {
+      color: var(--gold);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #2a2a4a;
+      padding-bottom: 6px;
+    }
+
+    /* STATS */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+
+    .stat-label { color: var(--muted); }
+    .stat-val { color: var(--text); font-weight: bold; }
+
+    .bar-wrap {
+      background: #111;
+      border-radius: 4px;
+      height: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .hp-bar { background: linear-gradient(90deg, #ef5350, #ff7043); }
+    .mp-bar { background: linear-gradient(90deg, #3949ab, #42a5f5); }
+    .xp-bar { background: linear-gradient(90deg, #6a1b9a, #ab47bc); }
+
+    .waffeln-count {
+      font-size: 1.5rem;
+      text-align: center;
+      color: var(--gold);
+      margin: 8px 0;
+    }
+
+    .waffeln-icon { font-size: 1.6rem; }
+
+    /* INVENTORY */
+    .inv-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .inv-slot {
+      background: #111;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .inv-slot:hover { border-color: var(--gold); }
+
+    .inv-slot .qty {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 0.65rem;
+      color: var(--gold);
+    }
+
+    /* CENTER */
+    #arena {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #scene {
+      background: var(--panel);
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #scene-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 100%);
+      z-index: 0;
+    }
+
+    .scene-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .yokai-sprite {
+      font-size: 5rem;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(233,69,96,0.6));
+      line-height: 1;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    @keyframes hit {
+      0% { filter: drop-shadow(0 0 20px rgba(233,69,96,0.6)); }
+      50% { filter: drop-shadow(0 0 30px rgba(255,255,255,1)) brightness(3); }
+      100% { filter: drop-shadow(0 0 20px rgba(233,69,96,0.6)); }
+    }
+
+    .yokai-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
+
+    .yokai-hp-wrap {
+      width: 200px;
+      background: #111;
+      border-radius: 6px;
+      height: 12px;
+      overflow: hidden;
+    }
+
+    .yokai-hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef5350, #ff7043);
+      border-radius: 6px;
+      transition: width 0.4s;
+    }
+
+    .yokai-hp-text {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    #log {
+      background: var(--panel);
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      height: 110px;
+      overflow-y: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    .log-line { margin-bottom: 2px; }
+    .log-line.dmg { color: #ff7043; }
+    .log-line.heal { color: var(--green); }
+    .log-line.loot { color: var(--gold); }
+    .log-line.info { color: var(--blue); }
+    .log-line.dead { color: var(--accent); font-weight: bold; }
+    .log-line.xp { color: var(--purple); }
+    .log-line.enemy { color: #ef5350; }
+
+    #actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.15); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-attack { background: linear-gradient(135deg, #c62828, #ef5350); color: #fff; }
+    .btn-magic  { background: linear-gradient(135deg, #1565c0, #42a5f5); color: #fff; }
+    .btn-heal   { background: linear-gradient(135deg, #2e7d32, #66bb6a); color: #fff; }
+    .btn-run    { background: linear-gradient(135deg, #424242, #757575); color: #fff; }
+    .btn-explore{ background: linear-gradient(135deg, #4a148c, #ab47bc); color: #fff; grid-column: 1 / -1; }
+    .btn-shop   { background: linear-gradient(135deg, #e65100, #ffa726); color: #fff; }
+
+    /* MAP */
+    #map-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .location-btn {
+      width: 100%;
+      padding: 9px;
+      background: #111;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+
+    .location-btn:hover { border-color: var(--gold); background: #1a1a2e; }
+    .location-btn.active { border-color: var(--gold); background: #2a2a1e; color: var(--gold); }
+    .location-btn .loc-icon { font-size: 1.1rem; margin-right: 6px; }
+
+    .shop-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #2a2a4a;
+      font-size: 0.82rem;
+    }
+
+    .shop-item:last-child { border-bottom: none; }
+    .shop-price { color: var(--gold); font-size: 0.8rem; }
+    .btn-buy {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      background: linear-gradient(135deg, #e65100, #ffa726);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-buy:hover { filter: brightness(1.15); }
+    .btn-buy:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* level up flash */
+    @keyframes levelUp {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(1.4); }
+    }
+
+    #level-up-toast {
+      display: none;
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      text-shadow: 0 0 30px rgba(240,192,64,1);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #dead-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    #dead-screen h2 {
+      font-family: 'Cinzel', serif;
+      color: var(--accent);
+      font-size: 2.5rem;
+      text-shadow: 0 0 30px rgba(233,69,96,0.8);
+    }
+
+    #dead-screen p { color: var(--muted); }
+
+    .btn-restart {
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #c62828, #ef5350);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+
+    /* scrollbar */
+    #log::-webkit-scrollbar { width: 4px; }
+    #log::-webkit-scrollbar-track { background: #0d0d1a; }
+    #log::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<h1>⛩️ Yokai Waffel Quest</h1>
+<p class="subtitle">Sammle Waffeln · Besiege Yokais · Werde zur Legende</p>
+
+<div id="game">
+
+  <!-- LEFT: Stats + Inventory -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="panel" id="stats-panel">
+      <h3>Krieger</h3>
+      <div class="stat-row"><span class="stat-label">Name</span><span class="stat-val" id="p-name">Held</span></div>
+      <div class="stat-row"><span class="stat-label">Level</span><span class="stat-val" id="p-level">1</span></div>
+
+      <div class="stat-row"><span class="stat-label">❤️ HP</span><span class="stat-val"><span id="p-hp">100</span>/<span id="p-maxhp">100</span></span></div>
+      <div class="bar-wrap"><div class="bar-fill hp-bar" id="hp-bar" style="width:100%"></div></div>
+
+      <div class="stat-row"><span class="stat-label">💧 Mana</span><span class="stat-val"><span id="p-mp">40</span>/<span id="p-maxmp">40</span></span></div>
+      <div class="bar-wrap"><div class="bar-fill mp-bar" id="mp-bar" style="width:100%"></div></div>
+
+      <div class="stat-row"><span class="stat-label">✨ XP</span><span class="stat-val"><span id="p-xp">0</span>/<span id="p-xpneed">100</span></span></div>
+      <div class="bar-wrap"><div class="bar-fill xp-bar" id="xp-bar" style="width:0%"></div></div>
+
+      <div class="stat-row"><span class="stat-label">⚔️ Angriff</span><span class="stat-val" id="p-atk">15</span></div>
+      <div class="stat-row"><span class="stat-label">🛡️ Verteidigung</span><span class="stat-val" id="p-def">5</span></div>
+
+      <h3 style="margin-top:10px;">🧇 Waffeln</h3>
+      <div class="waffeln-count" id="waffeln-count">0 <span class="waffeln-icon">🧇</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Inventar</h3>
+      <div class="inv-grid" id="inventory"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Arena -->
+  <div id="arena">
+    <div id="scene">
+      <div id="scene-bg"></div>
+      <div class="scene-content" id="scene-content">
+        <div class="yokai-sprite" id="yokai-sprite">⛩️</div>
+        <div class="yokai-name" id="yokai-name">Willkommen, Krieger!</div>
+        <div class="yokai-hp-wrap" id="yokai-hp-wrap" style="display:none">
+          <div class="yokai-hp-fill" id="yokai-hp-fill" style="width:100%"></div>
+        </div>
+        <div class="yokai-hp-text" id="yokai-hp-text"></div>
+      </div>
+    </div>
+
+    <div id="log"><div class="log-line info">Willkommen in Yokai Waffel Quest! Wähle einen Ort und erkunde die Welt! 🧇</div></div>
+
+    <div id="actions">
+      <button class="btn btn-attack" id="btn-attack" disabled onclick="attack()">⚔️ Angriff</button>
+      <button class="btn btn-magic"  id="btn-magic"  disabled onclick="magic()">🔮 Magie</button>
+      <button class="btn btn-heal"   id="btn-heal"   disabled onclick="heal()">💊 Heilen</button>
+      <button class="btn btn-run"    id="btn-run"    disabled onclick="run()">🏃 Fliehen</button>
+      <button class="btn btn-explore" id="btn-explore" onclick="explore()">🔍 Erkunden</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Map + Shop -->
+  <div id="map-area">
+    <div class="panel">
+      <h3>Orte</h3>
+      <button class="location-btn active" onclick="setLocation(this,'forest')" data-loc="forest">
+        <span class="loc-icon">🌲</span>Dunkler Wald
+      </button>
+      <button class="location-btn" onclick="setLocation(this,'shrine')" data-loc="shrine">
+        <span class="loc-icon">⛩️</span>Altes Schrein
+      </button>
+      <button class="location-btn" onclick="setLocation(this,'mountain')" data-loc="mountain">
+        <span class="loc-icon">⛰️</span>Geisterberg
+      </button>
+      <button class="location-btn" onclick="setLocation(this,'city')" data-loc="city">
+        <span class="loc-icon">🏯</span>Verfl. Stadt
+      </button>
+      <button class="location-btn" onclick="setLocation(this,'void')" data-loc="void">
+        <span class="loc-icon">🌀</span>Das Nichts
+      </button>
+    </div>
+
+    <div class="panel">
+      <h3>🏪 Waffel-Shop</h3>
+      <div id="shop-items"></div>
+    </div>
+  </div>
+</div>
+
+<div id="level-up-toast">⭐ LEVEL UP! ⭐</div>
+
+<div id="dead-screen">
+  <div style="font-size:4rem">💀</div>
+  <h2>Du bist gestorben!</h2>
+  <p>Die Yokais haben dich bezwungen...</p>
+  <button class="btn-restart" onclick="restartGame()">🔄 Neu starten</button>
+</div>
+
+<script>
+// ===================== DATA =====================
+const YOKAI_DATA = {
+  forest: [
+    { name: 'Kitsune-Welpe', emoji: '🦊', hp: 30, atk: 8,  def: 2, xp: 25, waffeln: [1,3], loot: {item:'Fuchsschwanz', emoji:'🌾', chance:0.3} },
+    { name: 'Tanuki',         emoji: '🦡', hp: 45, atk: 10, def: 3, xp: 35, waffeln: [2,4], loot: {item:'Tanuki-Blatt', emoji:'🍃', chance:0.25} },
+    { name: 'Kodama-Geist',   emoji: '👻', hp: 35, atk: 12, def: 2, xp: 30, waffeln: [1,4], loot: {item:'Waldkristall', emoji:'💎', chance:0.2} },
+  ],
+  shrine: [
+    { name: 'Oni-Tempel',     emoji: '👹', hp: 60, atk: 14, def: 5, xp: 50, waffeln: [3,6], loot: {item:'Oni-Horn',    emoji:'📯', chance:0.3} },
+    { name: 'Tengu-Mönch',    emoji: '🐦', hp: 50, atk: 16, def: 4, xp: 45, waffeln: [3,5], loot: {item:'Tengu-Feder', emoji:'🪶', chance:0.25} },
+    { name: 'Yuki-Onna',      emoji: '❄️', hp: 65, atk: 15, def: 6, xp: 55, waffeln: [4,7], loot: {item:'Eisherz',    emoji:'💠', chance:0.2} },
+  ],
+  mountain: [
+    { name: 'Yamamba',        emoji: '👺', hp: 80, atk: 18, def: 7, xp: 70, waffeln: [5,8],  loot: {item:'Bergjuwel',  emoji:'💠', chance:0.3} },
+    { name: 'Raijin-Blitz',   emoji: '⚡', hp: 70, atk: 22, def: 5, xp: 65, waffeln: [5,9],  loot: {item:'Blitzstein', emoji:'⚡', chance:0.2} },
+    { name: 'Kirin',          emoji: '🦄', hp: 90, atk: 20, def: 8, xp: 80, waffeln: [6,10], loot: {item:'Kirin-Schuppe',emoji:'🌟',chance:0.15} },
+  ],
+  city: [
+    { name: 'Gashadokuro',    emoji: '💀', hp:120, atk: 25, def: 8, xp: 100, waffeln: [7,12], loot: {item:'Geisterknochen',emoji:'🦴',chance:0.3} },
+    { name: 'Nue-Chimära',    emoji: '🐉', hp:110, atk: 28, def: 9, xp: 95,  waffeln: [8,14], loot: {item:'Chimären-Kern', emoji:'🔮',chance:0.2} },
+    { name: 'Otoroshi',       emoji: '🕷️', hp:100, atk: 24, def:10, xp: 90,  waffeln: [6,11], loot: {item:'Spinnengift',  emoji:'🧪',chance:0.25} },
+  ],
+  void: [
+    { name: 'Shinigami',      emoji: '💀', hp:160, atk: 35, def:12, xp: 150, waffeln:[12,20], loot: {item:'Todessiegel',  emoji:'☠️', chance:0.3} },
+    { name: 'Daitengu',       emoji: '🌑', hp:150, atk: 30, def:14, xp: 140, waffeln:[10,18], loot: {item:'Leerstück',    emoji:'🌀', chance:0.2} },
+    { name: 'Yomotsu-Hirasaka',emoji:'🌊', hp:180, atk: 32, def:11, xp: 160, waffeln:[15,25], loot: {item:'Unterwelt-Perl',emoji:'🫧',chance:0.15} },
+  ],
+};
+
+const SHOP_ITEMS = [
+  { name: 'Heiltrank',      emoji: '🧴', effect: 'heal',    val: 40,  cost: 5,  desc: '+40 HP' },
+  { name: 'Mana-Waffel',    emoji: '🧇', effect: 'mana',    val: 20,  cost: 4,  desc: '+20 Mana' },
+  { name: 'Angriffs-Rune',  emoji: '⚔️', effect: 'atk',     val: 5,   cost: 12, desc: '+5 ATK perm.' },
+  { name: 'Panzer-Rune',    emoji: '🛡️', effect: 'def',     val: 3,   cost: 10, desc: '+3 DEF perm.' },
+  { name: 'Mega-Heiltrank', emoji: '💊', effect: 'fullheal', val: 0,  cost: 18, desc: 'Volle HP!' },
+  { name: 'Waffel-Zauber',  emoji: '✨', effect: 'xp',       val: 50, cost: 8,  desc: '+50 XP' },
+];
+
+const LOCATIONS = {
+  forest:   { bg: 'radial-gradient(ellipse at center, #1a3a1a 0%, #0d0d1a 100%)', text: 'Dunkler Wald' },
+  shrine:   { bg: 'radial-gradient(ellipse at center, #2a1a3a 0%, #0d0d1a 100%)', text: 'Altes Schrein' },
+  mountain: { bg: 'radial-gradient(ellipse at center, #1a2a3a 0%, #0d0d1a 100%)', text: 'Geisterberg' },
+  city:     { bg: 'radial-gradient(ellipse at center, #3a1a1a 0%, #0d0d1a 100%)', text: 'Verfl. Stadt' },
+  void:     { bg: 'radial-gradient(ellipse at center, #1a0a2a 0%, #050510 100%)', text: 'Das Nichts' },
+};
+
+// ===================== STATE =====================
+let state = {};
+
+function initState() {
+  state = {
+    name: 'Held',
+    level: 1,
+    hp: 100, maxHp: 100,
+    mp: 40,  maxMp: 40,
+    atk: 15, def: 5,
+    xp: 0,   xpNeed: 100,
+    waffeln: 0,
+    location: 'forest',
+    inBattle: false,
+    enemy: null,
+    inventory: [],
+  };
+}
+
+// ===================== RENDER =====================
+function render() {
+  document.getElementById('p-name').textContent    = state.name;
+  document.getElementById('p-level').textContent   = state.level;
+  document.getElementById('p-hp').textContent      = state.hp;
+  document.getElementById('p-maxhp').textContent   = state.maxHp;
+  document.getElementById('p-mp').textContent      = state.mp;
+  document.getElementById('p-maxmp').textContent   = state.maxMp;
+  document.getElementById('p-xp').textContent      = state.xp;
+  document.getElementById('p-xpneed').textContent  = state.xpNeed;
+  document.getElementById('p-atk').textContent     = state.atk;
+  document.getElementById('p-def').textContent     = state.def;
+  document.getElementById('waffeln-count').innerHTML = `${state.waffeln} <span class="waffeln-icon">🧇</span>`;
+
+  document.getElementById('hp-bar').style.width = Math.max(0, (state.hp / state.maxHp) * 100) + '%';
+  document.getElementById('mp-bar').style.width = Math.max(0, (state.mp / state.maxMp) * 100) + '%';
+  document.getElementById('xp-bar').style.width = Math.min(100, (state.xp / state.xpNeed) * 100) + '%';
+
+  renderInventory();
+  renderShop();
+}
+
+function renderInventory() {
+  const el = document.getElementById('inventory');
+  const slots = 9;
+  el.innerHTML = '';
+  const grouped = {};
+  for (const it of state.inventory) {
+    grouped[it.name] = (grouped[it.name] || { ...it, count: 0 });
+    grouped[it.name].count++;
+  }
+  const items = Object.values(grouped);
+  for (let i = 0; i < slots; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'inv-slot';
+    if (items[i]) {
+      slot.textContent = items[i].emoji;
+      slot.title = items[i].name;
+      const q = document.createElement('span');
+      q.className = 'qty';
+      q.textContent = items[i].count > 1 ? items[i].count : '';
+      slot.appendChild(q);
+      slot.onclick = () => useItem(items[i].name);
+    }
+    el.appendChild(slot);
+  }
+}
+
+function renderShop() {
+  const el = document.getElementById('shop-items');
+  el.innerHTML = '';
+  for (const item of SHOP_ITEMS) {
+    const row = document.createElement('div');
+    row.className = 'shop-item';
+    row.innerHTML = `
+      <span>${item.emoji} ${item.name}<br><small style="color:var(--muted)">${item.desc}</small></span>
+      <span>
+        <span class="shop-price">${item.cost}🧇</span><br>
+        <button class="btn-buy" onclick="buyItem('${item.name}')" ${state.waffeln < item.cost ? 'disabled' : ''}>Kaufen</button>
+      </span>`;
+    el.appendChild(row);
+  }
+}
+
+function renderEnemy() {
+  const e = state.enemy;
+  document.getElementById('yokai-sprite').textContent = e.emoji;
+  document.getElementById('yokai-name').textContent   = e.name;
+  document.getElementById('yokai-hp-wrap').style.display = 'block';
+  document.getElementById('yokai-hp-fill').style.width = Math.max(0, (e.hp / e.maxHp) * 100) + '%';
+  document.getElementById('yokai-hp-text').textContent = `${e.hp} / ${e.maxHp} HP`;
+}
+
+function clearEnemy() {
+  document.getElementById('yokai-sprite').textContent = '⛩️';
+  document.getElementById('yokai-name').textContent   = 'Erkunde die Welt!';
+  document.getElementById('yokai-hp-wrap').style.display = 'none';
+  document.getElementById('yokai-hp-text').textContent = '';
+}
+
+// ===================== LOG =====================
+function log(msg, cls = '') {
+  const el = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + cls;
+  div.innerHTML = msg;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ===================== BUTTONS =====================
+function setBattleButtons(active) {
+  document.getElementById('btn-attack').disabled  = !active;
+  document.getElementById('btn-magic').disabled   = !active;
+  document.getElementById('btn-heal').disabled    = !active;
+  document.getElementById('btn-run').disabled     = !active;
+  document.getElementById('btn-explore').disabled =  active;
+}
+
+// ===================== LOCATION =====================
+function setLocation(btn, loc) {
+  if (state.inBattle) { log('Nicht während eines Kampfes!', 'info'); return; }
+  state.location = loc;
+  document.querySelectorAll('.location-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('scene-bg').style.background = LOCATIONS[loc].bg;
+  log(`📍 Du reist nach: <b>${LOCATIONS[loc].text}</b>`, 'info');
+  clearEnemy();
+  render();
+}
+
+// ===================== EXPLORE =====================
+function explore() {
+  if (state.inBattle) return;
+  const list = YOKAI_DATA[state.location];
+  const yokaiBase = list[Math.floor(Math.random() * list.length)];
+  const lvlMod = 1 + (state.level - 1) * 0.15;
+
+  state.enemy = {
+    ...yokaiBase,
+    hp:    Math.round(yokaiBase.hp    * lvlMod),
+    maxHp: Math.round(yokaiBase.hp    * lvlMod),
+    atk:   Math.round(yokaiBase.atk   * lvlMod),
+    def:   Math.round(yokaiBase.def   * lvlMod),
+  };
+
+  state.inBattle = true;
+  setBattleButtons(true);
+  renderEnemy();
+  log(`⚔️ Ein <b>${state.enemy.name}</b> ${state.enemy.emoji} erscheint!`, 'enemy');
+  render();
+}
+
+// ===================== COMBAT =====================
+function calcDmg(atk, def) {
+  const base = Math.max(1, atk - def);
+  return Math.round(base * (0.8 + Math.random() * 0.4));
+}
+
+function attack() {
+  if (!state.inBattle) return;
+  const dmg = calcDmg(state.atk, state.enemy.def);
+  state.enemy.hp -= dmg;
+  log(`⚔️ Du greifst an! <b>${dmg} Schaden</b> an ${state.enemy.name}!`, 'dmg');
+
+  if (state.enemy.hp <= 0) { winBattle(); return; }
+  renderEnemy();
+  enemyTurn();
+}
+
+function magic() {
+  if (!state.inBattle) return;
+  if (state.mp < 12) { log('Zu wenig Mana! 💧', 'info'); return; }
+  state.mp -= 12;
+  const dmg = calcDmg(state.atk * 1.8, state.enemy.def * 0.5);
+  state.enemy.hp -= dmg;
+  log(`🔮 Magie-Explosion! <b>${dmg} magischer Schaden</b>!`, 'info');
+
+  if (state.enemy.hp <= 0) { winBattle(); return; }
+  renderEnemy();
+  enemyTurn();
+  render();
+}
+
+function heal() {
+  if (!state.inBattle) return;
+  if (state.mp < 8) { log('Zu wenig Mana für Heilung! 💧', 'info'); return; }
+  state.mp -= 8;
+  const healAmt = Math.round(15 + state.level * 3 + Math.random() * 10);
+  state.hp = Math.min(state.maxHp, state.hp + healAmt);
+  log(`💊 Du heilst dich um <b>${healAmt} HP</b>!`, 'heal');
+  enemyTurn();
+  render();
+}
+
+function run() {
+  if (!state.inBattle) return;
+  if (Math.random() < 0.5) {
+    log('🏃 Du fliehst erfolgreich!', 'info');
+    endBattle();
+  } else {
+    log('🏃 Flucht fehlgeschlagen!', 'enemy');
+    enemyTurn();
+  }
+}
+
+function enemyTurn() {
+  const dmg = Math.max(1, calcDmg(state.enemy.atk, state.def));
+  state.hp -= dmg;
+  const sprite = document.getElementById('yokai-sprite');
+  sprite.style.animation = 'none';
+  setTimeout(() => sprite.style.animation = '', 50);
+
+  log(`💢 ${state.enemy.name} greift an! Du nimmst <b>${dmg} Schaden</b>!`, 'enemy');
+
+  if (state.hp <= 0) {
+    state.hp = 0;
+    render();
+    setTimeout(() => playerDead(), 400);
+    return;
+  }
+  render();
+}
+
+function winBattle() {
+  state.enemy.hp = 0;
+  renderEnemy();
+
+  const xpGain = state.enemy.xp;
+  const wafGain = state.enemy.waffeln[0] + Math.floor(Math.random() * (state.enemy.waffeln[1] - state.enemy.waffeln[0] + 1));
+  state.xp       += xpGain;
+  state.waffeln  += wafGain;
+
+  log(`💀 <b>${state.enemy.name}</b> besiegt!`, 'dead');
+  log(`✨ +${xpGain} XP | 🧇 +${wafGain} Waffeln!`, 'loot');
+
+  // Loot
+  if (Math.random() < state.enemy.loot.chance) {
+    const loot = state.enemy.loot;
+    if (state.inventory.length < 9) {
+      state.inventory.push({ name: loot.item, emoji: loot.emoji });
+      log(`🎁 Beute: <b>${loot.emoji} ${loot.item}</b>!`, 'loot');
+    }
+  }
+
+  checkLevelUp();
+  endBattle();
+  render();
+}
+
+function checkLevelUp() {
+  while (state.xp >= state.xpNeed) {
+    state.xp     -= state.xpNeed;
+    state.level  += 1;
+    state.xpNeed  = Math.round(state.xpNeed * 1.4);
+    state.maxHp  += 20;
+    state.maxMp  += 10;
+    state.hp      = state.maxHp;
+    state.mp      = state.maxMp;
+    state.atk    += 3;
+    state.def    += 2;
+    log(`⭐ <b>LEVEL UP!</b> Du bist jetzt Level ${state.level}! ATK+3, DEF+2!`, 'xp');
+    showLevelUpToast();
+  }
+}
+
+function showLevelUpToast() {
+  const el = document.getElementById('level-up-toast');
+  el.style.display = 'block';
+  el.style.animation = 'levelUp 1.2s ease forwards';
+  setTimeout(() => { el.style.display = 'none'; el.style.animation = ''; }, 1300);
+}
+
+function endBattle() {
+  state.inBattle = false;
+  state.enemy    = null;
+  setBattleButtons(false);
+  clearEnemy();
+}
+
+function playerDead() {
+  document.getElementById('dead-screen').style.display = 'flex';
+}
+
+function restartGame() {
+  document.getElementById('dead-screen').style.display = 'none';
+  initState();
+  document.getElementById('log').innerHTML = '';
+  clearEnemy();
+  setBattleButtons(false);
+  log('🔄 Du beginnst deine Reise von vorn...', 'info');
+  render();
+}
+
+// ===================== SHOP =====================
+function buyItem(name) {
+  const item = SHOP_ITEMS.find(i => i.name === name);
+  if (!item || state.waffeln < item.cost) return;
+  state.waffeln -= item.cost;
+
+  switch (item.effect) {
+    case 'heal':     state.hp = Math.min(state.maxHp, state.hp + item.val);   log(`🧴 +${item.val} HP! HP: ${state.hp}/${state.maxHp}`, 'heal'); break;
+    case 'mana':     state.mp = Math.min(state.maxMp, state.mp + item.val);   log(`💧 +${item.val} Mana! MP: ${state.mp}/${state.maxMp}`, 'info'); break;
+    case 'atk':      state.atk += item.val;                                   log(`⚔️ ATK dauerhaft +${item.val}! Jetzt: ${state.atk}`, 'xp'); break;
+    case 'def':      state.def += item.val;                                   log(`🛡️ DEF dauerhaft +${item.val}! Jetzt: ${state.def}`, 'xp'); break;
+    case 'fullheal': state.hp = state.maxHp; state.mp = state.maxMp;          log('💊 Vollständig geheilt!', 'heal'); break;
+    case 'xp':       state.xp += item.val; checkLevelUp();                    log(`✨ +${item.val} XP!`, 'xp'); break;
+  }
+
+  log(`🏪 Gekauft: <b>${item.emoji} ${item.name}</b> für ${item.cost} 🧇`, 'loot');
+  render();
+}
+
+function useItem(name) {
+  const idx = state.inventory.findIndex(i => i.name === name);
+  if (idx === -1) return;
+  const item = state.inventory[idx];
+
+  if (item.name === 'Heiltrank') {
+    state.hp = Math.min(state.maxHp, state.hp + 40);
+    log(`🧴 ${item.emoji} Heiltrank benutzt! +40 HP`, 'heal');
+    state.inventory.splice(idx, 1);
+    render();
+  } else {
+    log(`${item.emoji} ${item.name} — ein seltenes Sammelstück!`, 'loot');
+  }
+}
+
+// ===================== INIT =====================
+initState();
+render();
+log('Erkunde verschiedene Orte und besiege Yokais um Waffeln zu sammeln! 🧇', 'info');
+log('Im Shop kannst du Waffeln gegen mächtige Items tauschen! 🏪', 'info');
+</script>
+</body>
+</html>
