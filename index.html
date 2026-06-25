@@ -1,868 +1,910 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Yokai Waffel Quest</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yokai Waffen Quest 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#e0e0f0}
+#c{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
 
-    :root {
-      --bg: #0d0d1a;
-      --panel: #1a1a2e;
-      --accent: #e94560;
-      --gold: #f0c040;
-      --text: #e0e0f0;
-      --muted: #888;
-      --green: #4caf50;
-      --blue: #4fc3f7;
-      --red: #ef5350;
-      --purple: #9c27b0;
-    }
+#topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px;background:rgba(5,5,16,0.88);
+  border-bottom:1px solid #1a1a3a;pointer-events:all
+}
+#topbar h1{font-size:1.1rem;color:#f0c040;letter-spacing:1px}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+.panel{
+  background:rgba(8,8,22,0.90);border:1px solid #2a2a4a;
+  border-radius:8px;padding:10px 12px;backdrop-filter:blur(4px)
+}
+.panel h3{color:#f0c040;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:7px;border-bottom:1px solid #2a2a4a;padding-bottom:4px}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+#left{position:absolute;left:10px;top:52px;width:195px;display:flex;flex-direction:column;gap:8px;pointer-events:all}
+#right{position:absolute;right:10px;top:52px;width:195px;display:flex;flex-direction:column;gap:8px;pointer-events:all}
+#bottom{position:absolute;bottom:0;left:0;right:0;pointer-events:all}
 
-    h1 {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
-      color: var(--gold);
-      text-align: center;
-      padding: 20px 0 5px;
-      text-shadow: 0 0 20px rgba(240,192,64,0.5);
-    }
+.sr{display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px}
+.sl{color:#777}.sv{color:#e0e0f0;font-weight:bold}
+.bw{background:#0a0a16;border-radius:3px;height:6px;margin-bottom:7px;overflow:hidden}
+.bf{height:100%;border-radius:3px;transition:width .3s}
+.hp{background:linear-gradient(90deg,#c62828,#ef5350)}
+.mp{background:linear-gradient(90deg,#1565c0,#42a5f5)}
+.xp{background:linear-gradient(90deg,#6a1b9a,#ab47bc)}
 
-    .subtitle {
-      color: var(--muted);
-      font-size: 0.9rem;
-      text-align: center;
-      margin-bottom: 16px;
-      letter-spacing: 2px;
-    }
+.gold{background:linear-gradient(135deg,#7a5200,#f0c040);color:#fff;
+  padding:3px 10px;border-radius:20px;font-weight:bold;font-size:0.85rem}
 
-    #game {
-      display: grid;
-      grid-template-columns: 220px 1fr 220px;
-      gap: 12px;
-      width: 100%;
-      max-width: 900px;
-      padding: 0 12px 20px;
-    }
+/* Weapon list */
+.wi{padding:5px 8px;background:#0a0a16;border:1px solid #2a2a4a;border-radius:5px;
+  font-size:0.76rem;cursor:pointer;display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:4px;transition:border-color .15s}
+.wi:hover{border-color:#f0c040}
+.wi.eq{border-color:#4fc3f7;background:#091522}
+.ws{color:#666;font-size:0.68rem}
 
-    .panel {
-      background: var(--panel);
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 14px;
-    }
+/* Locations */
+.lb{width:100%;padding:5px 8px;background:#0a0a16;border:1px solid #2a2a4a;
+  border-radius:5px;color:#e0e0f0;font-size:0.76rem;cursor:pointer;
+  text-align:left;transition:all .15s;margin-bottom:3px}
+.lb:hover{border-color:#f0c040;background:#1a1a2e}
+.lb.ac{border-color:#f0c040;background:#1a1a10;color:#f0c040}
 
-    .panel h3 {
-      color: var(--gold);
-      font-size: 0.85rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #2a2a4a;
-      padding-bottom: 6px;
-    }
+/* Enemy panel */
+.ehw{width:160px;margin:3px auto;background:#0a0a16;border-radius:4px;height:9px;overflow:hidden}
 
-    /* STATS */
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 0.88rem;
-    }
+/* Action bar */
+#actbar{background:rgba(5,5,16,0.92);border-top:1px solid #2a2a4a;padding:8px 10px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.btn{padding:9px 4px;border:none;border-radius:7px;cursor:pointer;font-size:0.76rem;
+  font-weight:bold;transition:all .15s;letter-spacing:.3px}
+.btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.2)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.ba{background:linear-gradient(135deg,#c62828,#ef5350);color:#fff}
+.bm{background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff}
+.bh{background:linear-gradient(135deg,#2e7d32,#66bb6a);color:#fff}
+.br{background:linear-gradient(135deg,#424242,#757575);color:#fff}
+.be{background:linear-gradient(135deg,#4a148c,#ab47bc);color:#fff}
 
-    .stat-label { color: var(--muted); }
-    .stat-val { color: var(--text); font-weight: bold; }
+/* Log */
+#log{background:rgba(5,5,16,0.92);border-top:1px solid #2a2a4a;
+  padding:5px 12px;height:65px;overflow-y:auto;font-size:0.74rem;line-height:1.75}
+#log::-webkit-scrollbar{width:3px}
+#log::-webkit-scrollbar-thumb{background:#2a2a4a}
+.ld{color:#ff7043}.lh{color:#66bb6a}.ll{color:#f0c040}
+.li{color:#4fc3f7}.le{color:#ef5350}.lx{color:#ab47bc}.lk{color:#e94560;font-weight:bold}
 
-    .bar-wrap {
-      background: #111;
-      border-radius: 4px;
-      height: 8px;
-      margin-bottom: 10px;
-      overflow: hidden;
-    }
+/* Shop */
+#shopbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:150;
+  align-items:center;justify-content:center}
+.shopm{background:#0d0d1a;border:1px solid #2a2a4a;border-radius:12px;padding:18px;
+  width:390px;max-height:80vh;overflow-y:auto}
+.shopm h2{color:#f0c040;margin-bottom:14px;font-size:1.1rem}
+.srow{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 0;border-bottom:1px solid #1a1a3a;font-size:0.82rem}
+.srow:last-child{border-bottom:none}
+.sp{color:#f0c040;font-size:0.78rem}
+.bb{padding:4px 11px;background:linear-gradient(135deg,#e65100,#ffa726);border:none;
+  border-radius:5px;color:#fff;cursor:pointer;font-weight:bold;font-size:0.74rem}
+.bb:disabled{opacity:.4;cursor:not-allowed}
+.bc{margin-top:10px;width:100%;padding:9px;background:#333;border:none;
+  border-radius:7px;color:#fff;cursor:pointer;font-weight:bold;font-size:0.82rem}
 
-    .bar-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.3s;
-    }
+/* Dead */
+#dead{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:200;
+  flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#dead h2{color:#e94560;font-size:2.4rem;text-shadow:0 0 30px #e94560}
+.brest{padding:11px 28px;background:linear-gradient(135deg,#c62828,#ef5350);color:#fff;
+  border:none;border-radius:10px;font-size:.95rem;cursor:pointer;font-weight:bold}
 
-    .hp-bar { background: linear-gradient(90deg, #ef5350, #ff7043); }
-    .mp-bar { background: linear-gradient(90deg, #3949ab, #42a5f5); }
-    .xp-bar { background: linear-gradient(90deg, #6a1b9a, #ab47bc); }
-
-    .waffeln-count {
-      font-size: 1.5rem;
-      text-align: center;
-      color: var(--gold);
-      margin: 8px 0;
-    }
-
-    .waffeln-icon { font-size: 1.6rem; }
-
-    /* INVENTORY */
-    .inv-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .inv-slot {
-      background: #111;
-      border: 1px solid #2a2a4a;
-      border-radius: 6px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      position: relative;
-    }
-
-    .inv-slot:hover { border-color: var(--gold); }
-
-    .inv-slot .qty {
-      position: absolute;
-      bottom: 2px;
-      right: 4px;
-      font-size: 0.65rem;
-      color: var(--gold);
-    }
-
-    /* CENTER */
-    #arena {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    #scene {
-      background: var(--panel);
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 20px;
-      min-height: 260px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #scene-bg {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 100%);
-      z-index: 0;
-    }
-
-    .scene-content {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .yokai-sprite {
-      font-size: 5rem;
-      animation: float 3s ease-in-out infinite;
-      filter: drop-shadow(0 0 20px rgba(233,69,96,0.6));
-      line-height: 1;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      75% { transform: translateX(6px); }
-    }
-
-    @keyframes hit {
-      0% { filter: drop-shadow(0 0 20px rgba(233,69,96,0.6)); }
-      50% { filter: drop-shadow(0 0 30px rgba(255,255,255,1)) brightness(3); }
-      100% { filter: drop-shadow(0 0 20px rgba(233,69,96,0.6)); }
-    }
-
-    .yokai-name {
-      font-family: 'Cinzel', serif;
-      font-size: 1.2rem;
-      color: var(--accent);
-    }
-
-    .yokai-hp-wrap {
-      width: 200px;
-      background: #111;
-      border-radius: 6px;
-      height: 12px;
-      overflow: hidden;
-    }
-
-    .yokai-hp-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #ef5350, #ff7043);
-      border-radius: 6px;
-      transition: width 0.4s;
-    }
-
-    .yokai-hp-text {
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: center;
-    }
-
-    #log {
-      background: var(--panel);
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 10px 14px;
-      height: 110px;
-      overflow-y: auto;
-      font-size: 0.82rem;
-      line-height: 1.6;
-    }
-
-    .log-line { margin-bottom: 2px; }
-    .log-line.dmg { color: #ff7043; }
-    .log-line.heal { color: var(--green); }
-    .log-line.loot { color: var(--gold); }
-    .log-line.info { color: var(--blue); }
-    .log-line.dead { color: var(--accent); font-weight: bold; }
-    .log-line.xp { color: var(--purple); }
-    .log-line.enemy { color: #ef5350; }
-
-    #actions {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .btn {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: bold;
-      transition: all 0.15s;
-      letter-spacing: 0.5px;
-    }
-
-    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.15); }
-    .btn:active:not(:disabled) { transform: translateY(0); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .btn-attack { background: linear-gradient(135deg, #c62828, #ef5350); color: #fff; }
-    .btn-magic  { background: linear-gradient(135deg, #1565c0, #42a5f5); color: #fff; }
-    .btn-heal   { background: linear-gradient(135deg, #2e7d32, #66bb6a); color: #fff; }
-    .btn-run    { background: linear-gradient(135deg, #424242, #757575); color: #fff; }
-    .btn-explore{ background: linear-gradient(135deg, #4a148c, #ab47bc); color: #fff; grid-column: 1 / -1; }
-    .btn-shop   { background: linear-gradient(135deg, #e65100, #ffa726); color: #fff; }
-
-    /* MAP */
-    #map-area {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .location-btn {
-      width: 100%;
-      padding: 9px;
-      background: #111;
-      border: 1px solid #2a2a4a;
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.82rem;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.15s;
-    }
-
-    .location-btn:hover { border-color: var(--gold); background: #1a1a2e; }
-    .location-btn.active { border-color: var(--gold); background: #2a2a1e; color: var(--gold); }
-    .location-btn .loc-icon { font-size: 1.1rem; margin-right: 6px; }
-
-    .shop-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px solid #2a2a4a;
-      font-size: 0.82rem;
-    }
-
-    .shop-item:last-child { border-bottom: none; }
-    .shop-price { color: var(--gold); font-size: 0.8rem; }
-    .btn-buy {
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      background: linear-gradient(135deg, #e65100, #ffa726);
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .btn-buy:hover { filter: brightness(1.15); }
-    .btn-buy:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* level up flash */
-    @keyframes levelUp {
-      0% { opacity: 0; transform: scale(0.8); }
-      50% { opacity: 1; transform: scale(1.2); }
-      100% { opacity: 0; transform: scale(1.4); }
-    }
-
-    #level-up-toast {
-      display: none;
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Cinzel', serif;
-      font-size: 2rem;
-      color: var(--gold);
-      text-shadow: 0 0 30px rgba(240,192,64,1);
-      z-index: 100;
-      pointer-events: none;
-    }
-
-    #dead-screen {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.88);
-      z-index: 200;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-
-    #dead-screen h2 {
-      font-family: 'Cinzel', serif;
-      color: var(--accent);
-      font-size: 2.5rem;
-      text-shadow: 0 0 30px rgba(233,69,96,0.8);
-    }
-
-    #dead-screen p { color: var(--muted); }
-
-    .btn-restart {
-      padding: 12px 30px;
-      background: linear-gradient(135deg, #c62828, #ef5350);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      font-family: 'Cinzel', serif;
-    }
-
-    /* scrollbar */
-    #log::-webkit-scrollbar { width: 4px; }
-    #log::-webkit-scrollbar-track { background: #0d0d1a; }
-    #log::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 2px; }
-  </style>
+/* Level toast */
+#ltst{display:none;position:fixed;top:33%;left:50%;transform:translateX(-50%);
+  font-size:2rem;color:#f0c040;text-shadow:0 0 30px #f0c040;
+  z-index:100;pointer-events:none}
+@keyframes lu{0%{opacity:0;transform:translateX(-50%) scale(.7)}40%{opacity:1;transform:translateX(-50%) scale(1.3)}100%{opacity:0;transform:translateX(-50%) scale(1.6)}}
+</style>
 </head>
 <body>
+<canvas id="c"></canvas>
 
-<h1>⛩️ Yokai Waffel Quest</h1>
-<p class="subtitle">Sammle Waffeln · Besiege Yokais · Werde zur Legende</p>
+<div id="ui">
+  <div id="topbar">
+    <h1>⛩️ Yokai Waffen Quest 3D</h1>
+    <span class="gold" id="gold">💰 0 Gold</span>
+    <button class="btn" style="background:linear-gradient(135deg,#e65100,#ffa726);color:#fff;padding:6px 13px;pointer-events:all" onclick="openShop()">🏪 Händler</button>
+  </div>
 
-<div id="game">
-
-  <!-- LEFT: Stats + Inventory -->
-  <div style="display:flex;flex-direction:column;gap:12px;">
-    <div class="panel" id="stats-panel">
-      <h3>Krieger</h3>
-      <div class="stat-row"><span class="stat-label">Name</span><span class="stat-val" id="p-name">Held</span></div>
-      <div class="stat-row"><span class="stat-label">Level</span><span class="stat-val" id="p-level">1</span></div>
-
-      <div class="stat-row"><span class="stat-label">❤️ HP</span><span class="stat-val"><span id="p-hp">100</span>/<span id="p-maxhp">100</span></span></div>
-      <div class="bar-wrap"><div class="bar-fill hp-bar" id="hp-bar" style="width:100%"></div></div>
-
-      <div class="stat-row"><span class="stat-label">💧 Mana</span><span class="stat-val"><span id="p-mp">40</span>/<span id="p-maxmp">40</span></span></div>
-      <div class="bar-wrap"><div class="bar-fill mp-bar" id="mp-bar" style="width:100%"></div></div>
-
-      <div class="stat-row"><span class="stat-label">✨ XP</span><span class="stat-val"><span id="p-xp">0</span>/<span id="p-xpneed">100</span></span></div>
-      <div class="bar-wrap"><div class="bar-fill xp-bar" id="xp-bar" style="width:0%"></div></div>
-
-      <div class="stat-row"><span class="stat-label">⚔️ Angriff</span><span class="stat-val" id="p-atk">15</span></div>
-      <div class="stat-row"><span class="stat-label">🛡️ Verteidigung</span><span class="stat-val" id="p-def">5</span></div>
-
-      <h3 style="margin-top:10px;">🧇 Waffeln</h3>
-      <div class="waffeln-count" id="waffeln-count">0 <span class="waffeln-icon">🧇</span></div>
-    </div>
-
+  <div id="left">
     <div class="panel">
-      <h3>Inventar</h3>
-      <div class="inv-grid" id="inventory"></div>
+      <h3>Krieger</h3>
+      <div class="sr"><span class="sl">Level</span><span class="sv" id="plv">1</span></div>
+      <div class="sr"><span class="sl">❤️ HP</span><span class="sv"><span id="php">100</span>/<span id="pmhp">100</span></span></div>
+      <div class="bw"><div class="bf hp" id="hpb" style="width:100%"></div></div>
+      <div class="sr"><span class="sl">💧 Mana</span><span class="sv"><span id="pmp">40</span>/<span id="pmmp">40</span></span></div>
+      <div class="bw"><div class="bf mp" id="mpb" style="width:100%"></div></div>
+      <div class="sr"><span class="sl">✨ XP</span><span class="sv"><span id="pxp">0</span>/<span id="pxn">100</span></span></div>
+      <div class="bw"><div class="bf xp" id="xpb" style="width:0%"></div></div>
+      <div class="sr"><span class="sl">⚔️ ATK</span><span class="sv" id="patk">15</span></div>
+      <div class="sr"><span class="sl">🛡️ DEF</span><span class="sv" id="pdef">5</span></div>
+    </div>
+    <div class="panel">
+      <h3>🗡️ Ausgerüstete Waffen</h3>
+      <div id="wlist"></div>
     </div>
   </div>
 
-  <!-- CENTER: Arena -->
-  <div id="arena">
-    <div id="scene">
-      <div id="scene-bg"></div>
-      <div class="scene-content" id="scene-content">
-        <div class="yokai-sprite" id="yokai-sprite">⛩️</div>
-        <div class="yokai-name" id="yokai-name">Willkommen, Krieger!</div>
-        <div class="yokai-hp-wrap" id="yokai-hp-wrap" style="display:none">
-          <div class="yokai-hp-fill" id="yokai-hp-fill" style="width:100%"></div>
-        </div>
-        <div class="yokai-hp-text" id="yokai-hp-text"></div>
+  <div id="right">
+    <div class="panel" id="epanel" style="display:none">
+      <h3 id="etitle">Feind</h3>
+      <div style="text-align:center;padding:4px 0">
+        <div class="ehw"><div class="bf hp" id="ehpb" style="width:100%"></div></div>
+        <div style="font-size:0.7rem;color:#777;margin-top:2px"><span id="ehp">0</span>/<span id="emhp">0</span> HP</div>
       </div>
     </div>
-
-    <div id="log"><div class="log-line info">Willkommen in Yokai Waffel Quest! Wähle einen Ort und erkunde die Welt! 🧇</div></div>
-
-    <div id="actions">
-      <button class="btn btn-attack" id="btn-attack" disabled onclick="attack()">⚔️ Angriff</button>
-      <button class="btn btn-magic"  id="btn-magic"  disabled onclick="magic()">🔮 Magie</button>
-      <button class="btn btn-heal"   id="btn-heal"   disabled onclick="heal()">💊 Heilen</button>
-      <button class="btn btn-run"    id="btn-run"    disabled onclick="run()">🏃 Fliehen</button>
-      <button class="btn btn-explore" id="btn-explore" onclick="explore()">🔍 Erkunden</button>
-    </div>
-  </div>
-
-  <!-- RIGHT: Map + Shop -->
-  <div id="map-area">
     <div class="panel">
       <h3>Orte</h3>
-      <button class="location-btn active" onclick="setLocation(this,'forest')" data-loc="forest">
-        <span class="loc-icon">🌲</span>Dunkler Wald
-      </button>
-      <button class="location-btn" onclick="setLocation(this,'shrine')" data-loc="shrine">
-        <span class="loc-icon">⛩️</span>Altes Schrein
-      </button>
-      <button class="location-btn" onclick="setLocation(this,'mountain')" data-loc="mountain">
-        <span class="loc-icon">⛰️</span>Geisterberg
-      </button>
-      <button class="location-btn" onclick="setLocation(this,'city')" data-loc="city">
-        <span class="loc-icon">🏯</span>Verfl. Stadt
-      </button>
-      <button class="location-btn" onclick="setLocation(this,'void')" data-loc="void">
-        <span class="loc-icon">🌀</span>Das Nichts
-      </button>
+      <button class="lb ac" onclick="setLoc(this,'forest')">🌲 Dunkler Wald</button>
+      <button class="lb" onclick="setLoc(this,'shrine')">⛩️ Altes Schrein</button>
+      <button class="lb" onclick="setLoc(this,'mountain')">⛰️ Geisterberg</button>
+      <button class="lb" onclick="setLoc(this,'city')">🏯 Verfl. Stadt</button>
+      <button class="lb" onclick="setLoc(this,'void')">🌀 Das Nichts</button>
     </div>
+  </div>
 
-    <div class="panel">
-      <h3>🏪 Waffel-Shop</h3>
-      <div id="shop-items"></div>
+  <div id="bottom">
+    <div id="log"><span class="li">Willkommen! Erkunde die Welt und sammle mächtige Waffen! ⚔️</span><br></div>
+    <div id="actbar">
+      <button class="btn ba" id="bta" disabled onclick="doAtk()">⚔️ Angriff</button>
+      <button class="btn bm" id="btm" disabled onclick="doMag()">🔮 Magie</button>
+      <button class="btn bh" id="bth" disabled onclick="doHeal()">💊 Heilen</button>
+      <button class="btn br" id="btr" disabled onclick="doRun()">🏃 Fliehen</button>
+      <button class="btn be" id="bte" onclick="doExp()">🔍 Erkunden</button>
     </div>
   </div>
 </div>
 
-<div id="level-up-toast">⭐ LEVEL UP! ⭐</div>
+<div id="ltst">⭐ LEVEL UP! ⭐</div>
 
-<div id="dead-screen">
+<div id="dead">
   <div style="font-size:4rem">💀</div>
-  <h2>Du bist gestorben!</h2>
-  <p>Die Yokais haben dich bezwungen...</p>
-  <button class="btn-restart" onclick="restartGame()">🔄 Neu starten</button>
+  <h2>Du bist gefallen!</h2>
+  <p style="color:#777">Die Yokais haben dich bezwungen...</p>
+  <button class="brest" onclick="restart()">🔄 Neu starten</button>
 </div>
 
+<div id="shopbg">
+  <div class="shopm">
+    <h2>🏪 Waffenhändler</h2>
+    <div id="shoplist"></div>
+    <button class="bc" onclick="closeShop()">✕ Schließen</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-// ===================== DATA =====================
-const YOKAI_DATA = {
-  forest: [
-    { name: 'Kitsune-Welpe', emoji: '🦊', hp: 30, atk: 8,  def: 2, xp: 25, waffeln: [1,3], loot: {item:'Fuchsschwanz', emoji:'🌾', chance:0.3} },
-    { name: 'Tanuki',         emoji: '🦡', hp: 45, atk: 10, def: 3, xp: 35, waffeln: [2,4], loot: {item:'Tanuki-Blatt', emoji:'🍃', chance:0.25} },
-    { name: 'Kodama-Geist',   emoji: '👻', hp: 35, atk: 12, def: 2, xp: 30, waffeln: [1,4], loot: {item:'Waldkristall', emoji:'💎', chance:0.2} },
+// ── RENDERER ──────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050510);
+scene.fog = new THREE.FogExp2(0x050510, 0.028);
+
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+const CAM_BASE = new THREE.Vector3(0, 9, 18);
+camera.position.copy(CAM_BASE);
+camera.lookAt(0, 2.5, 0);
+
+function onResize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ── LIGHTS ────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x1a1a2e, 2.5));
+
+const sun = new THREE.DirectionalLight(0x8899ff, 2.5);
+sun.position.set(-8, 15, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 60;
+sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
+sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
+scene.add(sun);
+
+const rLight = new THREE.PointLight(0xff2244, 6, 22);
+rLight.position.set(5, 4, 3);
+scene.add(rLight);
+
+const bLight = new THREE.PointLight(0x2244ff, 6, 22);
+bLight.position.set(-5, 4, 3);
+scene.add(bLight);
+
+// ── ENVIRONMENT ───────────────────────────────────────────
+// Ground
+const gnd = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshPhongMaterial({color:0x080814, shininess:80, specular:0x111133})
+);
+gnd.rotation.x = -Math.PI/2;
+gnd.receiveShadow = true;
+scene.add(gnd);
+
+scene.add(new THREE.GridHelper(50, 28, 0x111144, 0x0d0d2a));
+
+// Arena ring
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(3.8, 4.3, 64),
+  new THREE.MeshBasicMaterial({color:0x3333cc, side:THREE.DoubleSide})
+);
+ring.rotation.x = -Math.PI/2;
+ring.position.y = 0.01;
+scene.add(ring);
+
+// Inner glow disc
+const disc = new THREE.Mesh(
+  new THREE.CircleGeometry(3.8, 64),
+  new THREE.MeshBasicMaterial({color:0x040420, transparent:true, opacity:0.7, side:THREE.DoubleSide})
+);
+disc.rotation.x = -Math.PI/2;
+disc.position.y = 0.005;
+scene.add(disc);
+
+// Torii gate
+(function buildTorii() {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshPhongMaterial({color:0x8b0000, emissive:0x330000, shininess:40});
+  const pL = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,10,8), mat);
+  pL.position.set(-4,5,-12); pL.castShadow = true; g.add(pL);
+  const pR = pL.clone(); pR.position.x = 4; g.add(pR);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(10,0.5,0.55), mat);
+  top.position.set(0,10.3,-12); g.add(top);
+  const cL = new THREE.Mesh(new THREE.BoxGeometry(1.6,0.38,0.55), mat);
+  cL.position.set(-5.6,10.12,-12); cL.rotation.z = 0.14; g.add(cL);
+  const cR = cL.clone(); cR.position.x = 5.6; cR.rotation.z = -0.14; g.add(cR);
+  const bot = new THREE.Mesh(new THREE.BoxGeometry(9.5,0.42,0.48), mat);
+  bot.position.set(0,8,-12); g.add(bot);
+  scene.add(g);
+})();
+
+// Mountains
+[[-18,8,-22],[-10,6,-24],[-3,7.5,-25],[7,9,-23],[14,6,-21],[20,7.5,-20]].forEach(([x,s,z])=>{
+  const m = new THREE.Mesh(new THREE.ConeGeometry(s*1.3, s*2.8, 6),
+    new THREE.MeshPhongMaterial({color:0x08081e, emissive:0x040410}));
+  m.position.set(x, s*1.4-1, z);
+  scene.add(m);
+});
+
+// ── CHARACTER BUILDERS ────────────────────────────────────
+function mkMat(c, e=0, s=80) {
+  return new THREE.MeshPhongMaterial({color:c, emissive:e, shininess:s});
+}
+
+function buildPlayer() {
+  const g = new THREE.Group();
+  const body  = mkMat(0x22447a, 0x051030, 80);
+  const armor = mkMat(0x334466, 0x111122, 120);
+  const skin  = mkMat(0xffddbb, 0, 40);
+
+  const add = (geo, mat, x,y,z) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x,y,z); m.castShadow = true; g.add(m); return m;
+  };
+
+  add(new THREE.BoxGeometry(0.38,1.1,0.38), body, -0.22,0.55,0);
+  add(new THREE.BoxGeometry(0.38,1.1,0.38), body,  0.22,0.55,0);
+  add(new THREE.BoxGeometry(0.95,1.2,0.52), armor, 0,1.5,0);
+  add(new THREE.BoxGeometry(0.4,0.4,0.4), armor, -0.68,1.95,0);
+  add(new THREE.BoxGeometry(0.4,0.4,0.4), armor,  0.68,1.95,0);
+  add(new THREE.BoxGeometry(0.3,0.9,0.3), body, -0.65,1.4,0);
+  add(new THREE.BoxGeometry(0.3,0.9,0.3), body,  0.65,1.4,0);
+  add(new THREE.BoxGeometry(0.72,0.72,0.7), skin, 0,2.42,0);
+  add(new THREE.BoxGeometry(0.78,0.44,0.78), armor, 0,2.72,0);
+
+  const eyeM = new THREE.MeshBasicMaterial({color:0x4fc3f7});
+  const eL = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.1,0.05), eyeM);
+  eL.position.set(-0.18,2.44,0.37); g.add(eL);
+  const eR = eL.clone(); eR.position.x = 0.18; g.add(eR);
+
+  const hook = new THREE.Object3D();
+  hook.name = 'hook'; hook.position.set(0.72,1.0,0.1); g.add(hook);
+  return g;
+}
+
+const YOKAI_BUILD = {
+  kitsune() {
+    const g = new THREE.Group();
+    const fur  = mkMat(0xff6600, 0x441100, 30);
+    const dark = mkMat(0x331100, 0, 20);
+    const eM   = new THREE.MeshBasicMaterial({color:0xffff00});
+    const add  = (geo,mat,x,y,z) => { const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+
+    add(new THREE.BoxGeometry(1.1,1.6,0.8), fur, 0,0.8,0);
+    add(new THREE.BoxGeometry(0.9,0.9,0.85), fur, 0,2.1,0);
+    add(new THREE.BoxGeometry(0.5,0.35,0.4), dark, 0,2.0,0.53);
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.2,0.55,4), fur);
+    ear.position.set(-0.28,2.76,0); g.add(ear);
+    const earR = ear.clone(); earR.position.x=0.28; g.add(earR);
+    const eL = new THREE.Mesh(new THREE.SphereGeometry(0.1,6,6), eM);
+    eL.position.set(-0.22,2.18,0.44); g.add(eL);
+    const eR = eL.clone(); eR.position.x=0.22; g.add(eR);
+    for (let i=0;i<3;i++){
+      const t=new THREE.Mesh(new THREE.ConeGeometry(0.17,0.85,5), fur);
+      t.position.set(-0.28+i*0.28,0.5,-0.72); t.rotation.x=-0.55+i*0.08; g.add(t);
+    }
+    for (let i=0;i<4;i++){
+      const leg=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.6,0.25),dark);
+      leg.position.set(i%2===0?-0.3:0.3, 0.3, i<2?0.22:-0.22); g.add(leg);
+    }
+    return g;
+  },
+
+  oni() {
+    const g = new THREE.Group();
+    const red  = mkMat(0xcc0000,0x440000,60);
+    const dark = mkMat(0x220000,0,40);
+    const eM   = new THREE.MeshBasicMaterial({color:0xffffff});
+    const pM   = new THREE.MeshBasicMaterial({color:0xff0000});
+    const add  = (geo,mat,x,y,z) => { const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+
+    add(new THREE.BoxGeometry(1.8,2.2,1.2), red, 0,1.1,0);
+    add(new THREE.BoxGeometry(1.4,1.2,1.2), red, 0,2.85,0);
+    const hMat = mkMat(0xccaa00,0,80);
+    const hL=new THREE.Mesh(new THREE.ConeGeometry(0.18,0.82,6),hMat); hL.position.set(-0.5,3.72,0); g.add(hL);
+    const hR=hL.clone(); hR.position.x=0.5; g.add(hR);
+    add(new THREE.BoxGeometry(0.55,1.5,0.5), red, -1.3,1.5,0);
+    add(new THREE.BoxGeometry(0.55,1.5,0.5), red,  1.3,1.5,0);
+    const eL=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,8),eM); eL.position.set(-0.35,2.94,0.62); g.add(eL);
+    const eR=eL.clone(); eR.position.x=0.35; g.add(eR);
+    const pL=new THREE.Mesh(new THREE.SphereGeometry(0.07,6,6),pM); pL.position.set(-0.35,2.94,0.74); g.add(pL);
+    const pR=pL.clone(); pR.position.x=0.35; g.add(pR);
+    add(new THREE.BoxGeometry(0.6,1.0,0.6), dark, -0.45,0.5,0);
+    add(new THREE.BoxGeometry(0.6,1.0,0.6), dark,  0.45,0.5,0);
+    return g;
+  },
+
+  tengu() {
+    const g = new THREE.Group();
+    const dark  = mkMat(0x1a1a3a,0x070730,80);
+    const beakM = mkMat(0xff6600,0,60);
+    const eM    = new THREE.MeshBasicMaterial({color:0xff0000});
+    const wMat  = mkMat(0x151530,0x060618,40);
+    const add   = (geo,mat,x,y,z) => { const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+
+    add(new THREE.BoxGeometry(1.0,1.8,0.7), dark, 0,0.9,0);
+    add(new THREE.BoxGeometry(0.85,0.85,0.85), dark, 0,2.2,0);
+    const bk=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.9,6),beakM);
+    bk.rotation.x=Math.PI/2; bk.position.set(0,2.2,0.73); g.add(bk);
+    const wL=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.1,1.2),wMat);
+    wL.position.set(-1.9,1.6,0); wL.rotation.z=0.28; g.add(wL);
+    const wR=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.1,1.2),wMat);
+    wR.position.set(1.9,1.6,0); wR.rotation.z=-0.28; g.add(wR);
+    const eL=new THREE.Mesh(new THREE.SphereGeometry(0.1,6,6),eM); eL.position.set(-0.24,2.3,0.44); g.add(eL);
+    const eR=eL.clone(); eR.position.x=0.24; g.add(eR);
+    add(new THREE.CylinderGeometry(0.1,0.1,0.9,5), dark, -0.2,0.45,0);
+    add(new THREE.CylinderGeometry(0.1,0.1,0.9,5), dark,  0.2,0.45,0);
+    return g;
+  },
+
+  skel() {
+    const g = new THREE.Group();
+    const bone = mkMat(0xddddc8,0x333322,30);
+    const eM   = new THREE.MeshBasicMaterial({color:0x00ff88});
+    const add  = (geo,mat,x,y,z) => { const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=true; g.add(m); return m; };
+
+    add(new THREE.BoxGeometry(2.0,2.5,1.0), bone, 0,1.25,0);
+    const skull=new THREE.Mesh(new THREE.SphereGeometry(0.9,8,8),bone); skull.position.y=3.3; skull.castShadow=true; g.add(skull);
+    add(new THREE.BoxGeometry(0.9,0.3,0.7), bone, 0,2.7,0.2);
+    const eL=new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6),eM); eL.position.set(-0.3,3.4,0.75); g.add(eL);
+    const eR=eL.clone(); eR.position.x=0.3; g.add(eR);
+    for (let i=0;i<4;i++){
+      const r=new THREE.Mesh(new THREE.TorusGeometry(0.68-i*0.04,0.06,4,12,Math.PI),bone);
+      r.rotation.x=Math.PI/2; r.position.set(0,2.0-i*0.34,0); g.add(r);
+    }
+    const aL=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,2.0,6),bone);
+    aL.position.set(-1.38,1.8,0); aL.rotation.z=0.4; g.add(aL);
+    const aR=aL.clone(); aR.position.x=1.38; aR.rotation.z=-0.4; g.add(aR);
+    add(new THREE.CylinderGeometry(0.2,0.18,1.5,6), bone, -0.5,0.75,0);
+    add(new THREE.CylinderGeometry(0.2,0.18,1.5,6), bone,  0.5,0.75,0);
+    return g;
+  },
+
+  void_() {
+    const g = new THREE.Group();
+    const body = mkMat(0x220044,0x110022,100);
+    body.transparent=true; body.opacity=0.88;
+    const eM   = new THREE.MeshBasicMaterial({color:0xff00ff});
+    const core = new THREE.MeshBasicMaterial({color:0x9900ff});
+    const b=new THREE.Mesh(new THREE.SphereGeometry(1.2,10,10),body); b.position.y=2; b.castShadow=true; g.add(b);
+    for(let i=0;i<6;i++){
+      const ang=(i/6)*Math.PI*2;
+      const t=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.2,1.5,5),body);
+      t.position.set(Math.cos(ang)*0.8,1.0,Math.sin(ang)*0.8);
+      t.rotation.z=Math.sin(ang)*0.5; t.rotation.x=Math.cos(ang)*0.5; g.add(t);
+    }
+    const c=new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),core); c.position.y=2; g.add(c);
+    for(let i=0;i<3;i++){
+      const ang=(i/3)*Math.PI*2;
+      const e=new THREE.Mesh(new THREE.SphereGeometry(0.16,6,6),eM);
+      e.position.set(Math.cos(ang)*0.72,2.2+Math.sin(ang)*0.3,Math.sin(ang)*0.72); g.add(e);
+    }
+    return g;
+  }
+};
+
+// ── WEAPON 3D MODELS ─────────────────────────────────────
+const W3D = {
+  fists: ()=>{},
+  katana(h) {
+    const bM=mkMat(0xddeeff,0x002244,200); bM.specular=new THREE.Color(0xffffff);
+    const b=new THREE.Mesh(new THREE.BoxGeometry(0.06,1.65,0.14),bM); b.position.y=0.82; h.add(b);
+    h.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.3,0.07,0.2),mkMat(0xaa8800)),{position:new THREE.Vector3(0,0,0)}));
+    const hd=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.5,0.07),mkMat(0x332211)); hd.position.y=-0.25; h.add(hd);
+  },
+  spear(h) {
+    const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,2.3,6),mkMat(0x5a3800)); sh.position.y=1.15; h.add(sh);
+    const tp=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.55,6),mkMat(0xccddee,0x001122,180)); tp.position.y=2.52; h.add(tp);
+  },
+  hammer(h) {
+    const hd=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.5,6),mkMat(0x4a2200)); hd.position.y=0.75; h.add(hd);
+    const head=new THREE.Mesh(new THREE.BoxGeometry(0.58,0.45,0.32),mkMat(0x556677,0x111122,150)); head.position.y=1.5; h.add(head);
+    const sp=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.38,6),mkMat(0x556677,0x111122,150));
+    sp.position.set(0.42,1.5,0); sp.rotation.z=-Math.PI/2; h.add(sp);
+  },
+  axe(h) {
+    const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,1.85,6),mkMat(0x3a1a00)); sh.position.y=0.92; h.add(sh);
+    const bl=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.84,0.1),mkMat(0x889900,0x223300,160)); bl.position.set(0.25,1.84,0); h.add(bl);
+    const sp=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.52,0.1),mkMat(0x889900,0x223300,160)); sp.position.set(-0.1,1.84,0); h.add(sp);
+  },
+  bow(h) {
+    const arc=new THREE.Mesh(new THREE.TorusGeometry(0.75,0.06,6,20,Math.PI*1.3),mkMat(0x5a3800));
+    arc.rotation.z=-Math.PI*0.15; arc.position.y=0.8; h.add(arc);
+    const ar=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.5,5),mkMat(0x7a5200));
+    ar.rotation.z=Math.PI/2; ar.position.set(0.4,0.8,0.2); h.add(ar);
+    const tp=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.26,5),mkMat(0xccddee,0x001122,180));
+    tp.rotation.z=Math.PI/2; tp.position.set(1.16,0.8,0.2); h.add(tp);
+  },
+  staff(h) {
+    const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.1,7),mkMat(0x2a1800)); sh.position.y=1.05; h.add(sh);
+    const orb=new THREE.Mesh(new THREE.SphereGeometry(0.24,10,10),mkMat(0x9900ff,0x440088,200)); orb.position.y=2.25; h.add(orb);
+    const rg=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.04,5,16),mkMat(0x886600)); rg.position.y=2.25; h.add(rg);
+  },
+};
+
+// ── PARTICLES ─────────────────────────────────────────────
+const particles = [];
+function spawnParts(from, to, color, n=28) {
+  const mat = new THREE.MeshBasicMaterial({color, transparent:true});
+  const dir = new THREE.Vector3().subVectors(to, from).normalize();
+  for (let i=0;i<n;i++) {
+    const p=new THREE.Mesh(new THREE.SphereGeometry(0.07+Math.random()*0.09,4,4), mat.clone());
+    p.position.copy(from);
+    p.userData.v=new THREE.Vector3(
+      dir.x*(2+Math.random()*3)+(Math.random()-.5)*2,
+      dir.y*(2+Math.random()*3)+Math.random()*2.5,
+      dir.z*(2+Math.random()*3)+(Math.random()-.5)*2
+    );
+    p.userData.life=p.userData.maxLife=0.55+Math.random()*0.4;
+    scene.add(p); particles.push(p);
+  }
+}
+function burstParts(pos, color, n=18) {
+  const mat = new THREE.MeshBasicMaterial({color, transparent:true});
+  for (let i=0;i<n;i++) {
+    const p=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.1), mat.clone());
+    p.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.6,Math.random()*.5,(Math.random()-.5)*.6));
+    p.userData.v=new THREE.Vector3((Math.random()-.5)*5,Math.random()*5,(Math.random()-.5)*5);
+    p.userData.life=p.userData.maxLife=0.4;
+    scene.add(p); particles.push(p);
+  }
+}
+function tickParts(dt) {
+  for (let i=particles.length-1;i>=0;i--) {
+    const p=particles[i];
+    p.userData.life-=dt;
+    if (p.userData.life<=0) { scene.remove(p); particles.splice(i,1); continue; }
+    p.position.addScaledVector(p.userData.v, dt);
+    p.userData.v.y-=6*dt;
+    const t=p.userData.life/p.userData.maxLife;
+    p.material.opacity=t; p.scale.setScalar(t*.8+.2);
+  }
+}
+
+// ── SCENE OBJECTS ─────────────────────────────────────────
+let pMesh=null, eMesh=null;
+const PPOS=new THREE.Vector3(-3,0,0);
+const EPOS=new THREE.Vector3( 3,0,0);
+
+function spawnPlayer() {
+  if (pMesh) scene.remove(pMesh);
+  pMesh=buildPlayer();
+  pMesh.position.copy(PPOS);
+  pMesh.rotation.y=Math.PI*.18;
+  scene.add(pMesh);
+}
+
+function spawnEnemy(type) {
+  if (eMesh) { scene.remove(eMesh); eMesh=null; }
+  const builder = YOKAI_BUILD[type];
+  if (!builder) return;
+  eMesh=builder();
+  eMesh.position.copy(EPOS);
+  eMesh.rotation.y=-Math.PI*.18;
+  scene.add(eMesh);
+}
+
+function removeEnemy() {
+  if (eMesh) { scene.remove(eMesh); eMesh=null; }
+}
+
+function applyWeapon3D(id) {
+  if (!pMesh) return;
+  const hook=pMesh.getObjectByName('hook');
+  if (!hook) return;
+  while (hook.children.length) hook.remove(hook.children[0]);
+  if (W3D[id]) W3D[id](hook);
+}
+
+// ── SHAKE ─────────────────────────────────────────────────
+let shakeT=0, shakeA=0;
+function shake(a=0.3, d=0.22) { shakeT=d; shakeA=a; }
+
+// ── LOCATION COLORS ───────────────────────────────────────
+const LOC_COL={
+  forest:   {bg:0x051405,fog:0x051405,r:0x22ff22,b:0x226622},
+  shrine:   {bg:0x0a0515,fog:0x0a0515,r:0xaa22ff,b:0x2222ff},
+  mountain: {bg:0x050a10,fog:0x050a10,r:0x2244ff,b:0x4488ff},
+  city:     {bg:0x150505,fog:0x150505,r:0xff2222,b:0xff8822},
+  void:     {bg:0x080510,fog:0x080510,r:0xff00ff,b:0x6600ff},
+};
+
+// ── GAME DATA ─────────────────────────────────────────────
+const YOKAI={
+  forest:[
+    {name:'Kitsune-Welpe', type:'kitsune',    hp:35,  atk:8,  def:2, xp:25, gold:[3,6],  drop:{id:'katana',p:.14}},
+    {name:'Tanuki-Geist',  type:'kitsune',    hp:50,  atk:11, def:3, xp:35, gold:[5,9],  drop:{id:'bow',p:.12}},
+    {name:'Kodama',        type:'tengu',      hp:42,  atk:10, def:2, xp:30, gold:[4,7],  drop:{id:'staff',p:.10}},
   ],
-  shrine: [
-    { name: 'Oni-Tempel',     emoji: '👹', hp: 60, atk: 14, def: 5, xp: 50, waffeln: [3,6], loot: {item:'Oni-Horn',    emoji:'📯', chance:0.3} },
-    { name: 'Tengu-Mönch',    emoji: '🐦', hp: 50, atk: 16, def: 4, xp: 45, waffeln: [3,5], loot: {item:'Tengu-Feder', emoji:'🪶', chance:0.25} },
-    { name: 'Yuki-Onna',      emoji: '❄️', hp: 65, atk: 15, def: 6, xp: 55, waffeln: [4,7], loot: {item:'Eisherz',    emoji:'💠', chance:0.2} },
+  shrine:[
+    {name:'Oni-Wächter',   type:'oni',        hp:72,  atk:15, def:5, xp:55, gold:[8,14], drop:{id:'hammer',p:.18}},
+    {name:'Tengu-Mönch',   type:'tengu',      hp:60,  atk:17, def:4, xp:50, gold:[7,12], drop:{id:'spear',p:.15}},
+    {name:'Yuki-Onna',     type:'kitsune',    hp:76,  atk:16, def:6, xp:60, gold:[9,15], drop:{id:'staff',p:.20}},
   ],
-  mountain: [
-    { name: 'Yamamba',        emoji: '👺', hp: 80, atk: 18, def: 7, xp: 70, waffeln: [5,8],  loot: {item:'Bergjuwel',  emoji:'💠', chance:0.3} },
-    { name: 'Raijin-Blitz',   emoji: '⚡', hp: 70, atk: 22, def: 5, xp: 65, waffeln: [5,9],  loot: {item:'Blitzstein', emoji:'⚡', chance:0.2} },
-    { name: 'Kirin',          emoji: '🦄', hp: 90, atk: 20, def: 8, xp: 80, waffeln: [6,10], loot: {item:'Kirin-Schuppe',emoji:'🌟',chance:0.15} },
+  mountain:[
+    {name:'Berg-Oni',      type:'oni',        hp:105, atk:20, def:8, xp:80, gold:[12,20],drop:{id:'axe',p:.20}},
+    {name:'Raijin',        type:'tengu',      hp:90,  atk:24, def:6, xp:75, gold:[11,18],drop:{id:'spear',p:.18}},
+    {name:'Kirin',         type:'kitsune',    hp:115, atk:22, def:9, xp:90, gold:[14,22],drop:{id:'katana',p:.15}},
   ],
-  city: [
-    { name: 'Gashadokuro',    emoji: '💀', hp:120, atk: 25, def: 8, xp: 100, waffeln: [7,12], loot: {item:'Geisterknochen',emoji:'🦴',chance:0.3} },
-    { name: 'Nue-Chimära',    emoji: '🐉', hp:110, atk: 28, def: 9, xp: 95,  waffeln: [8,14], loot: {item:'Chimären-Kern', emoji:'🔮',chance:0.2} },
-    { name: 'Otoroshi',       emoji: '🕷️', hp:100, atk: 24, def:10, xp: 90,  waffeln: [6,11], loot: {item:'Spinnengift',  emoji:'🧪',chance:0.25} },
+  city:[
+    {name:'Gashadokuro',   type:'skel',       hp:145, atk:28,def:10, xp:115,gold:[18,28],drop:{id:'axe',p:.22}},
+    {name:'Nue-Chimära',   type:'oni',        hp:130, atk:30,def:11, xp:110,gold:[16,26],drop:{id:'spear',p:.20}},
+    {name:'Otoroshi',      type:'skel',       hp:120, atk:26,def:12, xp:105,gold:[15,24],drop:{id:'hammer',p:.18}},
   ],
-  void: [
-    { name: 'Shinigami',      emoji: '💀', hp:160, atk: 35, def:12, xp: 150, waffeln:[12,20], loot: {item:'Todessiegel',  emoji:'☠️', chance:0.3} },
-    { name: 'Daitengu',       emoji: '🌑', hp:150, atk: 30, def:14, xp: 140, waffeln:[10,18], loot: {item:'Leerstück',    emoji:'🌀', chance:0.2} },
-    { name: 'Yomotsu-Hirasaka',emoji:'🌊', hp:180, atk: 32, def:11, xp: 160, waffeln:[15,25], loot: {item:'Unterwelt-Perl',emoji:'🫧',chance:0.15} },
+  void:[
+    {name:'Shinigami',     type:'void_',      hp:210, atk:38,def:14, xp:180,gold:[25,40],drop:{id:'katana',p:.30}},
+    {name:'Daitengu',      type:'void_',      hp:185, atk:34,def:16, xp:165,gold:[22,36],drop:{id:'axe',p:.25}},
+    {name:'Yomotsu',       type:'skel',       hp:230, atk:36,def:13, xp:190,gold:[28,45],drop:{id:'spear',p:.28}},
   ],
 };
 
-const SHOP_ITEMS = [
-  { name: 'Heiltrank',      emoji: '🧴', effect: 'heal',    val: 40,  cost: 5,  desc: '+40 HP' },
-  { name: 'Mana-Waffel',    emoji: '🧇', effect: 'mana',    val: 20,  cost: 4,  desc: '+20 Mana' },
-  { name: 'Angriffs-Rune',  emoji: '⚔️', effect: 'atk',     val: 5,   cost: 12, desc: '+5 ATK perm.' },
-  { name: 'Panzer-Rune',    emoji: '🛡️', effect: 'def',     val: 3,   cost: 10, desc: '+3 DEF perm.' },
-  { name: 'Mega-Heiltrank', emoji: '💊', effect: 'fullheal', val: 0,  cost: 18, desc: 'Volle HP!' },
-  { name: 'Waffel-Zauber',  emoji: '✨', effect: 'xp',       val: 50, cost: 8,  desc: '+50 XP' },
+const WEAPONS={
+  fists:  {name:'👊 Fäuste',     atk:0,  def:0, sp:'',          desc:'Keine Waffe'},
+  katana: {name:'🗡️ Katana',     atk:18, def:0, sp:'crit',      desc:'20% Krit (×2)'},
+  spear:  {name:'⚔️ Naginata',   atk:22, def:0, sp:'pierce',    desc:'50% DEF ignoriert'},
+  hammer: {name:'🔨 Oni-Hammer', atk:30, def:2, sp:'stun',      desc:'30% Betäubung'},
+  bow:    {name:'🏹 Yumi-Bogen', atk:15, def:0, sp:'sure_hit',  desc:'Trifft immer'},
+  staff:  {name:'🪄 Zauberstab', atk:12, def:0, sp:'magic_amp', desc:'Magie ×2.2'},
+  axe:    {name:'🪓 Dämonen-Axt',atk:35, def:0, sp:'',          desc:'Massivster Schaden'},
+};
+
+const SHOP_W=[
+  {id:'katana',cost:40},{id:'bow',cost:35},{id:'staff',cost:30},
+  {id:'spear',cost:50},{id:'hammer',cost:60},{id:'axe',cost:80},
+];
+const SHOP_I=[
+  {name:'Heiltrank',emoji:'🧴',effect:'heal',val:50,cost:15},
+  {name:'Mana-Trank',emoji:'💧',effect:'mana',val:25,cost:12},
+  {name:'Volle Heilung',emoji:'💊',effect:'fullheal',val:0,cost:30},
+  {name:'XP-Schriftrolle',emoji:'📜',effect:'xp',val:80,cost:20},
 ];
 
-const LOCATIONS = {
-  forest:   { bg: 'radial-gradient(ellipse at center, #1a3a1a 0%, #0d0d1a 100%)', text: 'Dunkler Wald' },
-  shrine:   { bg: 'radial-gradient(ellipse at center, #2a1a3a 0%, #0d0d1a 100%)', text: 'Altes Schrein' },
-  mountain: { bg: 'radial-gradient(ellipse at center, #1a2a3a 0%, #0d0d1a 100%)', text: 'Geisterberg' },
-  city:     { bg: 'radial-gradient(ellipse at center, #3a1a1a 0%, #0d0d1a 100%)', text: 'Verfl. Stadt' },
-  void:     { bg: 'radial-gradient(ellipse at center, #1a0a2a 0%, #050510 100%)', text: 'Das Nichts' },
-};
-
-// ===================== STATE =====================
-let state = {};
-
-function initState() {
-  state = {
-    name: 'Held',
-    level: 1,
-    hp: 100, maxHp: 100,
-    mp: 40,  maxMp: 40,
-    atk: 15, def: 5,
-    xp: 0,   xpNeed: 100,
-    waffeln: 0,
-    location: 'forest',
-    inBattle: false,
-    enemy: null,
-    inventory: [],
-  };
+// ── GAME STATE ────────────────────────────────────────────
+let G={};
+function initG() {
+  G={lv:1,hp:100,mhp:100,mp:40,mmp:40,atk:15,def:5,xp:0,xpn:100,
+     gold:0,loc:'forest',battle:false,enemy:null,weq:'fists',wown:['fists']};
 }
 
-// ===================== RENDER =====================
-function render() {
-  document.getElementById('p-name').textContent    = state.name;
-  document.getElementById('p-level').textContent   = state.level;
-  document.getElementById('p-hp').textContent      = state.hp;
-  document.getElementById('p-maxhp').textContent   = state.maxHp;
-  document.getElementById('p-mp').textContent      = state.mp;
-  document.getElementById('p-maxmp').textContent   = state.maxMp;
-  document.getElementById('p-xp').textContent      = state.xp;
-  document.getElementById('p-xpneed').textContent  = state.xpNeed;
-  document.getElementById('p-atk').textContent     = state.atk;
-  document.getElementById('p-def').textContent     = state.def;
-  document.getElementById('waffeln-count').innerHTML = `${state.waffeln} <span class="waffeln-icon">🧇</span>`;
-
-  document.getElementById('hp-bar').style.width = Math.max(0, (state.hp / state.maxHp) * 100) + '%';
-  document.getElementById('mp-bar').style.width = Math.max(0, (state.mp / state.maxMp) * 100) + '%';
-  document.getElementById('xp-bar').style.width = Math.min(100, (state.xp / state.xpNeed) * 100) + '%';
-
-  renderInventory();
-  renderShop();
+// ── UI ────────────────────────────────────────────────────
+function log(msg,cls='li') {
+  const el=document.getElementById('log');
+  const s=document.createElement('span');
+  s.className=cls; s.innerHTML=msg;
+  el.appendChild(s);
+  el.appendChild(document.createElement('br'));
+  el.scrollTop=el.scrollHeight;
 }
 
-function renderInventory() {
-  const el = document.getElementById('inventory');
-  const slots = 9;
-  el.innerHTML = '';
-  const grouped = {};
-  for (const it of state.inventory) {
-    grouped[it.name] = (grouped[it.name] || { ...it, count: 0 });
-    grouped[it.name].count++;
-  }
-  const items = Object.values(grouped);
-  for (let i = 0; i < slots; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'inv-slot';
-    if (items[i]) {
-      slot.textContent = items[i].emoji;
-      slot.title = items[i].name;
-      const q = document.createElement('span');
-      q.className = 'qty';
-      q.textContent = items[i].count > 1 ? items[i].count : '';
-      slot.appendChild(q);
-      slot.onclick = () => useItem(items[i].name);
-    }
-    el.appendChild(slot);
-  }
-}
+function renderUI() {
+  const w=WEAPONS[G.weq];
+  document.getElementById('plv').textContent=G.lv;
+  document.getElementById('php').textContent=G.hp;
+  document.getElementById('pmhp').textContent=G.mhp;
+  document.getElementById('pmp').textContent=G.mp;
+  document.getElementById('pmmp').textContent=G.mmp;
+  document.getElementById('pxp').textContent=G.xp;
+  document.getElementById('pxn').textContent=G.xpn;
+  document.getElementById('patk').textContent=G.atk+(w?.atk||0);
+  document.getElementById('pdef').textContent=G.def+(w?.def||0);
+  document.getElementById('gold').textContent=`💰 ${G.gold} Gold`;
+  document.getElementById('hpb').style.width=Math.max(0,G.hp/G.mhp*100)+'%';
+  document.getElementById('mpb').style.width=Math.max(0,G.mp/G.mmp*100)+'%';
+  document.getElementById('xpb').style.width=Math.min(100,G.xp/G.xpn*100)+'%';
 
-function renderShop() {
-  const el = document.getElementById('shop-items');
-  el.innerHTML = '';
-  for (const item of SHOP_ITEMS) {
-    const row = document.createElement('div');
-    row.className = 'shop-item';
-    row.innerHTML = `
-      <span>${item.emoji} ${item.name}<br><small style="color:var(--muted)">${item.desc}</small></span>
-      <span>
-        <span class="shop-price">${item.cost}🧇</span><br>
-        <button class="btn-buy" onclick="buyItem('${item.name}')" ${state.waffeln < item.cost ? 'disabled' : ''}>Kaufen</button>
-      </span>`;
-    el.appendChild(row);
-  }
-}
-
-function renderEnemy() {
-  const e = state.enemy;
-  document.getElementById('yokai-sprite').textContent = e.emoji;
-  document.getElementById('yokai-name').textContent   = e.name;
-  document.getElementById('yokai-hp-wrap').style.display = 'block';
-  document.getElementById('yokai-hp-fill').style.width = Math.max(0, (e.hp / e.maxHp) * 100) + '%';
-  document.getElementById('yokai-hp-text').textContent = `${e.hp} / ${e.maxHp} HP`;
-}
-
-function clearEnemy() {
-  document.getElementById('yokai-sprite').textContent = '⛩️';
-  document.getElementById('yokai-name').textContent   = 'Erkunde die Welt!';
-  document.getElementById('yokai-hp-wrap').style.display = 'none';
-  document.getElementById('yokai-hp-text').textContent = '';
-}
-
-// ===================== LOG =====================
-function log(msg, cls = '') {
-  const el = document.getElementById('log');
-  const div = document.createElement('div');
-  div.className = 'log-line ' + cls;
-  div.innerHTML = msg;
-  el.appendChild(div);
-  el.scrollTop = el.scrollHeight;
-}
-
-// ===================== BUTTONS =====================
-function setBattleButtons(active) {
-  document.getElementById('btn-attack').disabled  = !active;
-  document.getElementById('btn-magic').disabled   = !active;
-  document.getElementById('btn-heal').disabled    = !active;
-  document.getElementById('btn-run').disabled     = !active;
-  document.getElementById('btn-explore').disabled =  active;
-}
-
-// ===================== LOCATION =====================
-function setLocation(btn, loc) {
-  if (state.inBattle) { log('Nicht während eines Kampfes!', 'info'); return; }
-  state.location = loc;
-  document.querySelectorAll('.location-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('scene-bg').style.background = LOCATIONS[loc].bg;
-  log(`📍 Du reist nach: <b>${LOCATIONS[loc].text}</b>`, 'info');
-  clearEnemy();
-  render();
-}
-
-// ===================== EXPLORE =====================
-function explore() {
-  if (state.inBattle) return;
-  const list = YOKAI_DATA[state.location];
-  const yokaiBase = list[Math.floor(Math.random() * list.length)];
-  const lvlMod = 1 + (state.level - 1) * 0.15;
-
-  state.enemy = {
-    ...yokaiBase,
-    hp:    Math.round(yokaiBase.hp    * lvlMod),
-    maxHp: Math.round(yokaiBase.hp    * lvlMod),
-    atk:   Math.round(yokaiBase.atk   * lvlMod),
-    def:   Math.round(yokaiBase.def   * lvlMod),
-  };
-
-  state.inBattle = true;
-  setBattleButtons(true);
-  renderEnemy();
-  log(`⚔️ Ein <b>${state.enemy.name}</b> ${state.enemy.emoji} erscheint!`, 'enemy');
-  render();
-}
-
-// ===================== COMBAT =====================
-function calcDmg(atk, def) {
-  const base = Math.max(1, atk - def);
-  return Math.round(base * (0.8 + Math.random() * 0.4));
-}
-
-function attack() {
-  if (!state.inBattle) return;
-  const dmg = calcDmg(state.atk, state.enemy.def);
-  state.enemy.hp -= dmg;
-  log(`⚔️ Du greifst an! <b>${dmg} Schaden</b> an ${state.enemy.name}!`, 'dmg');
-
-  if (state.enemy.hp <= 0) { winBattle(); return; }
-  renderEnemy();
-  enemyTurn();
-}
-
-function magic() {
-  if (!state.inBattle) return;
-  if (state.mp < 12) { log('Zu wenig Mana! 💧', 'info'); return; }
-  state.mp -= 12;
-  const dmg = calcDmg(state.atk * 1.8, state.enemy.def * 0.5);
-  state.enemy.hp -= dmg;
-  log(`🔮 Magie-Explosion! <b>${dmg} magischer Schaden</b>!`, 'info');
-
-  if (state.enemy.hp <= 0) { winBattle(); return; }
-  renderEnemy();
-  enemyTurn();
-  render();
-}
-
-function heal() {
-  if (!state.inBattle) return;
-  if (state.mp < 8) { log('Zu wenig Mana für Heilung! 💧', 'info'); return; }
-  state.mp -= 8;
-  const healAmt = Math.round(15 + state.level * 3 + Math.random() * 10);
-  state.hp = Math.min(state.maxHp, state.hp + healAmt);
-  log(`💊 Du heilst dich um <b>${healAmt} HP</b>!`, 'heal');
-  enemyTurn();
-  render();
-}
-
-function run() {
-  if (!state.inBattle) return;
-  if (Math.random() < 0.5) {
-    log('🏃 Du fliehst erfolgreich!', 'info');
-    endBattle();
+  if (G.enemy) {
+    document.getElementById('epanel').style.display='block';
+    document.getElementById('etitle').textContent=G.enemy.name;
+    document.getElementById('ehp').textContent=Math.max(0,G.enemy.hp);
+    document.getElementById('emhp').textContent=G.enemy.mhp;
+    document.getElementById('ehpb').style.width=Math.max(0,G.enemy.hp/G.enemy.mhp*100)+'%';
   } else {
-    log('🏃 Flucht fehlgeschlagen!', 'enemy');
-    enemyTurn();
+    document.getElementById('epanel').style.display='none';
   }
+
+  const wl=document.getElementById('wlist');
+  wl.innerHTML='';
+  G.wown.forEach(id=>{
+    const ww=WEAPONS[id];
+    const d=document.createElement('div');
+    d.className='wi'+(G.weq===id?' eq':'');
+    d.onclick=()=>equipW(id);
+    d.innerHTML=`<span>${ww.name}</span><span class="ws">+${ww.atk}ATK</span>`;
+    wl.appendChild(d);
+  });
 }
 
-function enemyTurn() {
-  const dmg = Math.max(1, calcDmg(state.enemy.atk, state.def));
-  state.hp -= dmg;
-  const sprite = document.getElementById('yokai-sprite');
-  sprite.style.animation = 'none';
-  setTimeout(() => sprite.style.animation = '', 50);
+function setBtns(battle) {
+  ['bta','btm','bth','btr'].forEach(id=>document.getElementById(id).disabled=!battle);
+  document.getElementById('bte').disabled=battle;
+}
 
-  log(`💢 ${state.enemy.name} greift an! Du nimmst <b>${dmg} Schaden</b>!`, 'enemy');
+// ── LOCATION ──────────────────────────────────────────────
+function setLoc(btn, loc) {
+  if (G.battle){log('Nicht während des Kampfes!','li');return;}
+  G.loc=loc;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('ac'));
+  btn.classList.add('ac');
+  const c=LOC_COL[loc];
+  scene.background.set(c.bg);
+  scene.fog.color.set(c.fog);
+  rLight.color.set(c.r);
+  bLight.color.set(c.b);
+  log(`📍 Du reist zu: <b>${btn.textContent.trim()}</b>`,'li');
+}
 
-  if (state.hp <= 0) {
-    state.hp = 0;
-    render();
-    setTimeout(() => playerDead(), 400);
-    return;
-  }
-  render();
+// ── COMBAT ────────────────────────────────────────────────
+function tatk(){return G.atk+(WEAPONS[G.weq]?.atk||0);}
+function tdef(){return G.def+(WEAPONS[G.weq]?.def||0);}
+function dmg(a,d){return Math.max(1,Math.round((a-d)*(0.8+Math.random()*0.4)));}
+
+function pFrom(){return pMesh?pMesh.position.clone().add(new THREE.Vector3(0,2,0)):PPOS.clone();}
+function eFrom(){return eMesh?eMesh.position.clone().add(new THREE.Vector3(0,2,0)):EPOS.clone();}
+
+function doExp() {
+  if (G.battle) return;
+  const list=YOKAI[G.loc];
+  const base=list[Math.floor(Math.random()*list.length)];
+  const lm=1+(G.lv-1)*0.18;
+  G.enemy={...base,hp:Math.round(base.hp*lm),mhp:Math.round(base.hp*lm),
+            atk:Math.round(base.atk*lm),def:Math.round(base.def*lm)};
+  G.battle=true; setBtns(true);
+  spawnEnemy(base.type);
+  log(`⚔️ <b>${G.enemy.name}</b> erscheint!`,'le');
+  renderUI();
+}
+
+function doAtk() {
+  if (!G.battle) return;
+  const w=WEAPONS[G.weq];
+  let d=dmg(tatk(), w.sp==='pierce'?G.enemy.def*0.5:G.enemy.def);
+  if (w.sp==='crit'&&Math.random()<.20){d*=2;log('💥 Kritischer Treffer!','ll');}
+  G.enemy.hp-=d;
+  log(`⚔️ <b>${d} Schaden</b> an ${G.enemy.name}!`,'ld');
+  spawnParts(pFrom(),eFrom(),w.sp==='crit'?0xffdd00:0xff4422);
+  if(G.enemy.hp<=0){setTimeout(winBattle,300);return;}
+  burstParts(eFrom(),0xff2200); shake(0.22,0.2);
+  renderUI();
+  setTimeout(()=>{
+    if(!G.battle)return;
+    if(w.sp==='stun'&&Math.random()<.30)log(`💫 ${G.enemy.name} betäubt!`,'li');
+    else enemyAtk();
+  },420);
+}
+
+function doMag() {
+  if (!G.battle||G.mp<14){if(G.mp<14)log('Zu wenig Mana!','li');return;}
+  G.mp-=14;
+  const w=WEAPONS[G.weq];
+  const d=dmg(tatk()*(w.sp==='magic_amp'?2.2:1.7),G.enemy.def*0.4);
+  G.enemy.hp-=d;
+  log(`🔮 <b>${d} magischer Schaden</b>!`,'li');
+  spawnParts(pFrom(),eFrom(),0x8822ff,40);
+  if(G.enemy.hp<=0){setTimeout(winBattle,300);return;}
+  burstParts(eFrom(),0x8800ff); shake(0.16,0.18);
+  renderUI();
+  setTimeout(()=>{if(G.battle)enemyAtk();},420);
+}
+
+function doHeal() {
+  if (!G.battle||G.mp<10){if(G.mp<10)log('Zu wenig Mana!','li');return;}
+  G.mp-=10;
+  const h=Math.round(20+G.lv*4+Math.random()*14);
+  G.hp=Math.min(G.mhp,G.hp+h);
+  log(`💊 +${h} HP geheilt!`,'lh');
+  burstParts(pFrom(),0x00ff88); renderUI();
+  setTimeout(()=>{if(G.battle)enemyAtk();},320);
+}
+
+function doRun() {
+  if (!G.battle) return;
+  if (Math.random()<.55){log('🏃 Erfolgreich geflohen!','li');endBattle();}
+  else{log('🏃 Flucht fehlgeschlagen!','le');enemyAtk();}
+}
+
+function enemyAtk() {
+  if (!G.battle||!G.enemy) return;
+  const d=Math.max(1,dmg(G.enemy.atk,tdef()));
+  G.hp-=d;
+  log(`💢 ${G.enemy.name} trifft! <b>${d} Schaden</b>!`,'le');
+  spawnParts(eFrom(),pFrom(),0xff2200,20);
+  burstParts(pFrom(),0xff0000); shake(0.3,0.22);
+  if(G.hp<=0){G.hp=0;renderUI();setTimeout(playerDead,400);return;}
+  renderUI();
 }
 
 function winBattle() {
-  state.enemy.hp = 0;
-  renderEnemy();
-
-  const xpGain = state.enemy.xp;
-  const wafGain = state.enemy.waffeln[0] + Math.floor(Math.random() * (state.enemy.waffeln[1] - state.enemy.waffeln[0] + 1));
-  state.xp       += xpGain;
-  state.waffeln  += wafGain;
-
-  log(`💀 <b>${state.enemy.name}</b> besiegt!`, 'dead');
-  log(`✨ +${xpGain} XP | 🧇 +${wafGain} Waffeln!`, 'loot');
-
-  // Loot
-  if (Math.random() < state.enemy.loot.chance) {
-    const loot = state.enemy.loot;
-    if (state.inventory.length < 9) {
-      state.inventory.push({ name: loot.item, emoji: loot.emoji });
-      log(`🎁 Beute: <b>${loot.emoji} ${loot.item}</b>!`, 'loot');
-    }
+  if (!G.enemy) return;
+  G.xp+=G.enemy.xp;
+  const g=G.enemy.gold[0]+Math.floor(Math.random()*(G.enemy.gold[1]-G.enemy.gold[0]+1));
+  G.gold+=g;
+  log(`💀 <b>${G.enemy.name}</b> besiegt!`,'lk');
+  log(`✨ +${G.enemy.xp} XP | 💰 +${g} Gold`,'ll');
+  const drop=G.enemy.drop;
+  if(drop&&Math.random()<drop.p&&!G.wown.includes(drop.id)){
+    G.wown.push(drop.id);
+    log(`🗡️ Waffe erbeutet: <b>${WEAPONS[drop.id].name}</b>! (${WEAPONS[drop.id].desc})`,'ll');
   }
-
-  checkLevelUp();
-  endBattle();
-  render();
+  if(eMesh) spawnParts(eFrom(),eFrom().clone().add(new THREE.Vector3(0,4,0)),0xff4400,70);
+  checkLvl(); endBattle(); renderUI();
 }
 
-function checkLevelUp() {
-  while (state.xp >= state.xpNeed) {
-    state.xp     -= state.xpNeed;
-    state.level  += 1;
-    state.xpNeed  = Math.round(state.xpNeed * 1.4);
-    state.maxHp  += 20;
-    state.maxMp  += 10;
-    state.hp      = state.maxHp;
-    state.mp      = state.maxMp;
-    state.atk    += 3;
-    state.def    += 2;
-    log(`⭐ <b>LEVEL UP!</b> Du bist jetzt Level ${state.level}! ATK+3, DEF+2!`, 'xp');
-    showLevelUpToast();
+function checkLvl() {
+  while(G.xp>=G.xpn){
+    G.xp-=G.xpn; G.lv++;
+    G.xpn=Math.round(G.xpn*1.45);
+    G.mhp+=25; G.mmp+=12; G.hp=G.mhp; G.mp=G.mmp;
+    G.atk+=4; G.def+=2;
+    log(`⭐ <b>LEVEL ${G.lv}!</b> ATK+4, DEF+2, HP+25!`,'lx');
+    const el=document.getElementById('ltst');
+    el.style.display='block'; el.style.animation='lu 1.3s ease forwards';
+    setTimeout(()=>{el.style.display='none';el.style.animation='';},1400);
+    if(pMesh) spawnParts(pFrom(),pFrom().clone().add(new THREE.Vector3(0,6,0)),0xffdd00,90);
   }
 }
 
-function showLevelUpToast() {
-  const el = document.getElementById('level-up-toast');
-  el.style.display = 'block';
-  el.style.animation = 'levelUp 1.2s ease forwards';
-  setTimeout(() => { el.style.display = 'none'; el.style.animation = ''; }, 1300);
+function endBattle(){G.battle=false;G.enemy=null;setBtns(false);removeEnemy();renderUI();}
+function playerDead(){document.getElementById('dead').style.display='flex';}
+function restart(){
+  document.getElementById('dead').style.display='none';
+  initG();
+  document.getElementById('log').innerHTML='';
+  setBtns(false); removeEnemy();
+  spawnPlayer(); applyWeapon3D('fists');
+  log('🔄 Ein neues Abenteuer beginnt!','li');
+  renderUI();
 }
 
-function endBattle() {
-  state.inBattle = false;
-  state.enemy    = null;
-  setBattleButtons(false);
-  clearEnemy();
+// ── WEAPON EQUIP ──────────────────────────────────────────
+function equipW(id) {
+  if (!G.wown.includes(id)) return;
+  G.weq=id; applyWeapon3D(id);
+  log(`🗡️ Ausgerüstet: <b>${WEAPONS[id].name}</b> — ${WEAPONS[id].desc}`,'li');
+  renderUI();
 }
 
-function playerDead() {
-  document.getElementById('dead-screen').style.display = 'flex';
+// ── SHOP ──────────────────────────────────────────────────
+function openShop(){
+  const el=document.getElementById('shoplist');
+  el.innerHTML='<div style="color:#aaa;font-size:.75rem;margin-bottom:8px">⚔️ Waffen:</div>';
+  SHOP_W.forEach(({id,cost})=>{
+    const w=WEAPONS[id]; const owned=G.wown.includes(id);
+    const r=document.createElement('div'); r.className='srow';
+    r.innerHTML=`<div><b>${w.name}</b><br><small style="color:#666">${w.desc} | ATK+${w.atk}</small></div>
+    <div style="text-align:right"><div class="sp">${owned?'✅ Besitzt':cost+' 💰'}</div>
+    ${owned?'':`<button class="bb" onclick="buyW('${id}',${cost})" ${G.gold<cost?'disabled':''}>Kaufen</button>`}</div>`;
+    el.appendChild(r);
+  });
+  const h=document.createElement('div');
+  h.style.cssText='color:#aaa;font-size:.75rem;margin:11px 0 7px;border-top:1px solid #1a1a3a;padding-top:9px';
+  h.textContent='🧪 Items:'; el.appendChild(h);
+  SHOP_I.forEach(item=>{
+    const r=document.createElement('div'); r.className='srow';
+    r.innerHTML=`<div><b>${item.emoji} ${item.name}</b></div>
+    <div style="text-align:right"><div class="sp">${item.cost} 💰</div>
+    <button class="bb" onclick="buyI('${item.name}')" ${G.gold<item.cost?'disabled':''}>Kaufen</button></div>`;
+    el.appendChild(r);
+  });
+  document.getElementById('shopbg').style.display='flex';
 }
-
-function restartGame() {
-  document.getElementById('dead-screen').style.display = 'none';
-  initState();
-  document.getElementById('log').innerHTML = '';
-  clearEnemy();
-  setBattleButtons(false);
-  log('🔄 Du beginnst deine Reise von vorn...', 'info');
-  render();
+function closeShop(){document.getElementById('shopbg').style.display='none';}
+function buyW(id,cost){
+  if(G.gold<cost||G.wown.includes(id))return;
+  G.gold-=cost; G.wown.push(id);
+  log(`🗡️ Waffe gekauft: <b>${WEAPONS[id].name}</b>!`,'ll');
+  closeShop(); openShop(); renderUI();
 }
-
-// ===================== SHOP =====================
-function buyItem(name) {
-  const item = SHOP_ITEMS.find(i => i.name === name);
-  if (!item || state.waffeln < item.cost) return;
-  state.waffeln -= item.cost;
-
-  switch (item.effect) {
-    case 'heal':     state.hp = Math.min(state.maxHp, state.hp + item.val);   log(`🧴 +${item.val} HP! HP: ${state.hp}/${state.maxHp}`, 'heal'); break;
-    case 'mana':     state.mp = Math.min(state.maxMp, state.mp + item.val);   log(`💧 +${item.val} Mana! MP: ${state.mp}/${state.maxMp}`, 'info'); break;
-    case 'atk':      state.atk += item.val;                                   log(`⚔️ ATK dauerhaft +${item.val}! Jetzt: ${state.atk}`, 'xp'); break;
-    case 'def':      state.def += item.val;                                   log(`🛡️ DEF dauerhaft +${item.val}! Jetzt: ${state.def}`, 'xp'); break;
-    case 'fullheal': state.hp = state.maxHp; state.mp = state.maxMp;          log('💊 Vollständig geheilt!', 'heal'); break;
-    case 'xp':       state.xp += item.val; checkLevelUp();                    log(`✨ +${item.val} XP!`, 'xp'); break;
+function buyI(name){
+  const item=SHOP_I.find(i=>i.name===name);
+  if(!item||G.gold<item.cost)return;
+  G.gold-=item.cost;
+  switch(item.effect){
+    case 'heal':G.hp=Math.min(G.mhp,G.hp+item.val);log(`🧴 +${item.val} HP!`,'lh');break;
+    case 'mana':G.mp=Math.min(G.mmp,G.mp+item.val);log(`💧 +${item.val} Mana!`,'li');break;
+    case 'fullheal':G.hp=G.mhp;G.mp=G.mmp;log('💊 Vollständig geheilt!','lh');break;
+    case 'xp':G.xp+=item.val;checkLvl();log(`📜 +${item.val} XP!`,'lx');break;
   }
-
-  log(`🏪 Gekauft: <b>${item.emoji} ${item.name}</b> für ${item.cost} 🧇`, 'loot');
-  render();
+  renderUI(); closeShop(); openShop();
 }
 
-function useItem(name) {
-  const idx = state.inventory.findIndex(i => i.name === name);
-  if (idx === -1) return;
-  const item = state.inventory[idx];
+// ── RENDER LOOP ───────────────────────────────────────────
+const clk=new THREE.Clock();
 
-  if (item.name === 'Heiltrank') {
-    state.hp = Math.min(state.maxHp, state.hp + 40);
-    log(`🧴 ${item.emoji} Heiltrank benutzt! +40 HP`, 'heal');
-    state.inventory.splice(idx, 1);
-    render();
+renderer.setAnimationLoop(()=>{
+  const dt=clk.getDelta(), t=clk.getElapsedTime();
+
+  if(pMesh){pMesh.position.y=Math.sin(t*1.2)*0.05;pMesh.rotation.y=Math.PI*.18+Math.sin(t*.5)*.05;}
+  if(eMesh){eMesh.position.y=Math.sin(t*1.5+1)*0.08;eMesh.rotation.y=-Math.PI*.18+Math.sin(t*.7+.5)*.07;}
+
+  // Arena ring pulse
+  const p=0.5+Math.sin(t*2)*0.5;
+  ring.material.color.setRGB(p*.1,p*.1,p);
+
+  // Light pulse
+  rLight.intensity=5+Math.sin(t*2.3)*1.5;
+  bLight.intensity=5+Math.sin(t*1.8+1)*1.5;
+
+  // Camera shake
+  if(shakeT>0){
+    shakeT-=dt;
+    const s=shakeA*(shakeT/.25);
+    camera.position.set(CAM_BASE.x+(Math.random()-.5)*s,CAM_BASE.y+(Math.random()-.5)*s*.5,CAM_BASE.z+(Math.random()-.5)*s);
   } else {
-    log(`${item.emoji} ${item.name} — ein seltenes Sammelstück!`, 'loot');
+    camera.position.lerp(CAM_BASE,.1);
   }
-}
 
-// ===================== INIT =====================
-initState();
-render();
-log('Erkunde verschiedene Orte und besiege Yokais um Waffeln zu sammeln! 🧇', 'info');
-log('Im Shop kannst du Waffeln gegen mächtige Items tauschen! 🏪', 'info');
+  tickParts(dt);
+  renderer.render(scene,camera);
+});
+
+// ── INIT ──────────────────────────────────────────────────
+initG();
+spawnPlayer();
+applyWeapon3D('fists');
+renderUI();
+log('Erkunde Orte, besiege Yokais und sammle mächtige Waffen! 🗡️','li');
+log('Waffen fallen als Beute oder kaufe sie beim Händler oben rechts.','li');
 </script>
 </body>
 </html>
